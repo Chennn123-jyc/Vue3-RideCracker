@@ -62,14 +62,13 @@ onMounted(async () => {
     musicStore.initPlaylist(songs);
   }
   
-  // 只在需要时初始化播放器
   if (musicStore.playlist.length > 0 && !musicStore.currentSong) {
     musicStore.setCurrentSong(musicStore.playlist[0]);
-  }
-  
-  // 同步音频状态（不需要延迟）
-  if (musicStore.currentSong) {
     musicStore.syncAudioWithState();
+  } else if (musicStore.currentSong) {
+    if (musicStore.isPlaying) {
+      player.play().catch(console.error);
+    }
   }
 });
 </script>
