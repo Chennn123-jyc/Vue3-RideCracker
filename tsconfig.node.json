@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "composite": true,
+      "module": "ESNext",
+      "moduleResolution": "NodeNext",  // 更新为 NodeNext
+      "allowSyntheticDefaultImports": true,
+      "strict": true,
+      "isolatedModules": true,
+      "esModuleInterop": true,
+      "types": ["node", "vite/client"]  // 添加类型声明
+    },
+    "include": ["vite.config.ts"]
+  }
