@@ -158,26 +158,23 @@ router.beforeEach((to, from) => {
   const musicStore = useMusicStore()
   const player = useAudioPlayer()
 
-  // 1. 离开音乐界面：保存最新进度到 Pinia
+  // 离开音乐界面时保存状态
   if (from.name?.toString().startsWith('music') && !to.name?.toString().startsWith('music')) {
-    // 关键：从音频实例获取实时进度，而非依赖 Pinia 中的 currentTime
-    const realTimeCurrentTime = player.getCurrentTime();
-    musicStore.setCurrentTime(realTimeCurrentTime); // 更新 Pinia 进度
-    console.log('离开音乐界面，保存进度：', realTimeCurrentTime); // 用于调试
+    // 保存当前播放状态
+    if (player.audio.value) {
+      musicStore.setCurrentTime(player.audio.value.currentTime);
+    }
+    // 暂停播放但保持实例
   }
 
-  // 2. 进入音乐界面：触发状态恢复（保持不变，但可增加日志）
+  // 进入音乐界面时恢复状态
   if (!from.name?.toString().startsWith('music') && to.name?.toString().startsWith('music')) {
-    if (musicStore.currentSong) {
-      // 增加延迟：确保音频实例初始化完成后再同步（避免实例未就绪）
-      setTimeout(() => {
-        musicStore.syncAudioWithState();
-        console.log('进入音乐界面，恢复进度：', musicStore.currentTime); // 用于调试
-      }, 100); 
+    // 直接恢复播放状态，不需要setTimeout
+    if (musicStore.isPlaying && player.audio.value) {
+      player.play().catch(console.error);
     }
   }
 
-  // 原有：设置页面标题
   document.title = to.meta.title || 'Sport&Music'
 })
 

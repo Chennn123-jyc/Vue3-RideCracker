@@ -42,36 +42,34 @@ const player = useAudioPlayer();
 const songFiles = import.meta.glob('@/assets/music/*.mp3', { query: '?url', import: 'default' });
 
 onMounted(async () => {
-  // 加载歌曲列表
-  const songs: Song[] = [];
-  for (const path in songFiles) {
-    const fileName = path.split('/').pop()?.replace('.mp3', '') || '未知歌曲';
-    const url = await songFiles[path]();
-    songs.push({
-      id: `file-${Date.now()}-${fileName}`,
-      title: fileName,
-      artist: '未知艺术家',
-      album: '本地歌曲',
-      coverUrl: '/images/default-cover.png',
-      url: url as string,
-      duration: 0,
-      lyrics: []
-    });
+  // 只在第一次加载时初始化歌曲列表
+  if (musicStore.playlist.length === 0) {
+    const songs: Song[] = [];
+    for (const path in songFiles) {
+      const fileName = path.split('/').pop()?.replace('.mp3', '') || '未知歌曲';
+      const url = await songFiles[path]();
+      songs.push({
+        id: `file-${Date.now()}-${fileName}`,
+        title: fileName,
+        artist: '未知艺术家',
+        album: '本地歌曲',
+        coverUrl: '/images/default-cover.png',
+        url: url as string,
+        duration: 0,
+        lyrics: []
+      });
+    }
+    musicStore.initPlaylist(songs);
   }
-
-  musicStore.initPlaylist(songs);
   
-  // 初始化默认歌曲（修复currentSong的判断方式）
-  if (musicStore.playlist.length > 0 && !currentSong.value) {
+  // 只在需要时初始化播放器
+  if (musicStore.playlist.length > 0 && !musicStore.currentSong) {
     musicStore.setCurrentSong(musicStore.playlist[0]);
-    player.initPlayer(musicStore.playlist[0].url);
   }
-
-  // 组件挂载时恢复状态
-  if (currentSong.value) {  // 现在currentSong已正确定义
-    setTimeout(() => {
-      musicStore.syncAudioWithState();
-    }, 150);
+  
+  // 同步音频状态（不需要延迟）
+  if (musicStore.currentSong) {
+    musicStore.syncAudioWithState();
   }
 });
 </script>

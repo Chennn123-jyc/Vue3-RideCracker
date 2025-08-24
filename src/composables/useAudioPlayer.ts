@@ -1,18 +1,19 @@
 let playerInstance: AudioPlayer | null = null;
 
-import { ref, watch, Ref } from 'vue'; 
+import { ref, watch, Ref, computed } from 'vue'; 
 import { useMusicStore } from '@/stores/musicStore';
 
 export interface AudioPlayer {
   audio: Ref<HTMLAudioElement | null>;
   initPlayer: (url?: string) => void;
-  play: () => void;
+  play: () => Promise<void>;
   pause: () => void;
   updateMediaMetadata: () => void;
-  setCurrentTime: (time: number) => void;
+  setCurrentTime: (time: number) => Promise<void>;
   togglePlayPause: () => void;
   getCurrentTime: () => number;
   cleanup: () => void; 
+  isInitialized: Ref<boolean>;
 }
 
 export default function useAudioPlayer(): AudioPlayer {
@@ -24,17 +25,76 @@ export default function useAudioPlayer(): AudioPlayer {
   const audio = ref<HTMLAudioElement | null>(null);
   const musicStore = useMusicStore();
   const waitingForCanPlay = ref(false);
-  const isManualUpdate = ref(false); 
+  const isManualUpdate = ref(false);
+  const isInitialized = ref(false);
+
+  // 精确的URL比较函数
+  const areUrlsEqual = (url1: string, url2: string): boolean => {
+    try {
+      const u1 = new URL(url1);
+      const u2 = new URL(url2);
+      return u1.pathname === u2.pathname && u1.search === u2.search;
+    } catch (e) {
+      return url1 === url2;
+    }
+  };
 
   // 清理旧音频实例
   const cleanupPreviousAudio = () => {
     if (audio.value) {
       audio.value.pause();
+      
+      // 移除所有事件监听器
       audio.value.removeEventListener('timeupdate', handleTimeUpdate);
       audio.value.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.value.removeEventListener('ended', handleEnded);
       audio.value.removeEventListener('canplay', handleCanPlay);
+      audio.value.removeEventListener('error', handleError);
+      audio.value.removeEventListener('progress', handleBufferProgress);
+      
+      // 重置src以释放资源
+      audio.value.src = '';
+      audio.value.load();
+      
       audio.value = null;
+    }
+  };
+
+  // 设置事件监听
+  const setupEventListeners = () => {
+    if (!audio.value) return;
+    
+    // 先移除所有可能的事件监听器
+    audio.value.removeEventListener('timeupdate', handleTimeUpdate);
+    audio.value.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.value.removeEventListener('ended', handleEnded);
+    audio.value.removeEventListener('canplay', handleCanPlay);
+    audio.value.removeEventListener('error', handleError);
+    audio.value.removeEventListener('progress', handleBufferProgress);
+    
+    // 然后添加新的事件监听器
+    audio.value.addEventListener('timeupdate', handleTimeUpdate);
+    audio.value.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.value.addEventListener('ended', handleEnded);
+    audio.value.addEventListener('canplay', handleCanPlay);
+    audio.value.addEventListener('error', handleError);
+    audio.value.addEventListener('progress', handleBufferProgress);
+  };
+
+  // 提取同步播放状态的逻辑
+  const syncPlaybackState = () => {
+    if (!audio.value) return;
+    
+    if (musicStore.isPlaying && audio.value.paused) {
+      setTimeout(() => {
+        if (audio.value && musicStore.isPlaying && audio.value.paused) {
+          audio.value.play().catch(error => {
+            console.error("自动播放失败:", error);
+          });
+        }
+      }, 100);
+    } else if (!musicStore.isPlaying && !audio.value.paused) {
+      audio.value.pause();
     }
   };
 
@@ -43,30 +103,69 @@ export default function useAudioPlayer(): AudioPlayer {
     const playUrl = url || musicStore.currentSong?.url;
     if (!playUrl) return;
 
-    // 若已有实例且 URL 相同，不重新创建（避免进度丢失）
-    if (audio.value && audio.value.src.includes(playUrl)) {
-        return; 
+    // 使用更精确的URL比较函数
+    if (audio.value && areUrlsEqual(audio.value.src, playUrl)) {
+      syncPlaybackState();
+      return;
     }
 
     // 清理旧实例（仅在 URL 变化时执行）
-    if (audio.value) {
-        audio.value.pause();
-        audio.value.removeEventListener('timeupdate', handleTimeUpdate);
-    }
+    cleanupPreviousAudio();
 
+    // 创建新实例
     audio.value = new Audio(playUrl);
     setupEventListeners();
     audio.value.volume = musicStore.volume / 100;
-    audio.value.load();
-};
+    audio.value.preload = 'auto';
+    
+    // 统一处理音频加载完成后的操作
+    const onAudioReady = () => {
+      if (!audio.value) return;
+      
+      // 设置当前时间
+      if (musicStore.currentTime > 0) {
+        audio.value.currentTime = musicStore.currentTime;
+      }
+      
+      // 如果需要播放，尝试播放
+      if (musicStore.isPlaying) {
+        audio.value.play().catch(error => {
+          console.error("播放失败:", error);
+          waitingForCanPlay.value = true;
+        });
+      }
+      
+      isInitialized.value = true;
+      audio.value.removeEventListener('canplay', onAudioReady);
+    };
+    
+    if (audio.value.readyState > 0) {
+      // 如果已经可以播放，直接执行
+      onAudioReady();
+    } else {
+      // 否则等待可以播放时执行
+      audio.value.addEventListener('canplay', onAudioReady);
+    }
+  };
 
-  // 设置事件监听
-  const setupEventListeners = () => {
-    if (!audio.value) return;
-    audio.value.addEventListener('timeupdate', handleTimeUpdate);
-    audio.value.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.value.addEventListener('ended', handleEnded);
-    audio.value.addEventListener('canplay', handleCanPlay);
+  // 缓冲进度处理
+  const handleBufferProgress = () => {
+    if (audio.value && audio.value.buffered.length > 0) {
+      const buffered = audio.value.buffered.end(0);
+      const duration = audio.value.duration || 1;
+      const bufferPercentage = (buffered / duration) * 100;
+      
+      // 可以根据需要存储或使用这个值
+      console.log(`缓冲进度: ${bufferPercentage.toFixed(1)}%`);
+    }
+  };
+
+  // 错误处理
+  const handleError = () => {
+    if (audio.value) {
+      console.error("音频加载错误:", audio.value.error);
+      waitingForCanPlay.value = false;
+    }
   };
 
   // 添加后台播放支持
@@ -81,18 +180,18 @@ export default function useAudioPlayer(): AudioPlayer {
   };
 
   // 播放
-  const play = () => {
+  const play = async (): Promise<void> => {
     if (audio.value) {
-      audio.value.play()
-        .then(() => {
-          musicStore.isPlaying = true;
-          enableBackgroundPlay();
-          waitingForCanPlay.value = false;
-        })
-        .catch(error => {
-          console.error("播放失败:", error);
-          waitingForCanPlay.value = true;
-        });
+      try {
+        await audio.value.play();
+        musicStore.isPlaying = true;
+        enableBackgroundPlay();
+        waitingForCanPlay.value = false;
+      } catch (error) {
+        console.error("播放失败:", error);
+        waitingForCanPlay.value = true;
+        throw error;
+      }
     }
   };
 
@@ -139,7 +238,7 @@ export default function useAudioPlayer(): AudioPlayer {
     }
   };
 
-  // 新增：手动清理方法，替代onUnmounted
+  // 手动清理方法
   const cleanup = () => {
     cleanupPreviousAudio();
     if ('mediaSession' in navigator) {
@@ -148,9 +247,10 @@ export default function useAudioPlayer(): AudioPlayer {
         navigator.mediaSession.setActionHandler(action, null);
       });
     }
+    isInitialized.value = false;
   };
 
-  // 更新当前播放时间（仅在非手动更新时触发）
+  // 更新当前播放时间
   const handleTimeUpdate = () => {
     if (audio.value && !isManualUpdate.value) {
       musicStore.setCurrentTime(audio.value.currentTime);
@@ -162,6 +262,10 @@ export default function useAudioPlayer(): AudioPlayer {
     if (audio.value) {
       musicStore.duration = audio.value.duration;
       updateMediaMetadata();
+      
+      if (musicStore.currentSong && !musicStore.currentSong.duration) {
+        musicStore.currentSong.duration = audio.value.duration;
+      }
     }
   };
 
@@ -196,9 +300,6 @@ export default function useAudioPlayer(): AudioPlayer {
     (newSong) => {
       if (newSong?.url) {
         initPlayer(newSong.url);
-        if (musicStore.isPlaying) {
-          setTimeout(play, 100);
-        }
       }
     },
     { deep: true }
@@ -218,10 +319,13 @@ export default function useAudioPlayer(): AudioPlayer {
   watch(
     () => musicStore.isPlaying,
     (isPlaying) => {
-      if (isPlaying) {
-        play();
-      } else {
-        pause();
+      // 只有当音频实例存在且状态不一致时才同步
+      if (audio.value && isPlaying !== !audio.value.paused) {
+        if (isPlaying && audio.value.paused) {
+          play().catch(console.error);
+        } else if (!isPlaying && !audio.value.paused) {
+          pause();
+        }
       }
     }
   );
@@ -235,8 +339,8 @@ export default function useAudioPlayer(): AudioPlayer {
     setCurrentTime,
     togglePlayPause,
     getCurrentTime,
-    cleanup // 导出清理方法
+    cleanup,
+    isInitialized
   };
   return playerInstance;
-  
 }
