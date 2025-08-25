@@ -2,16 +2,14 @@
   <div class="vinyl-container">
     <div class="vinyl-record-wrapper" :class="{ 'playing': isPlaying }">
       <div class="vinyl-glow"></div>
-      <div class="vinyl-record" :class="{ 'playing': isPlaying }">
-        <div class="vinyl-texture"></div>
-        <!-- 凹槽元素绑定ref，替代document查询 -->
+      <div class="vinyl-record" ref="vinylRecord">
+        <div class="vinyl-texture" ref="texture"></div>
         <div class="vinyl-grooves" ref="grooves"></div>
         <div class="album-cover">
           <img :src="coverUrl" alt="Album Cover">
         </div>
         <div class="vinyl-spindle"></div>
       </div>
-      <!-- 唱臂元素绑定ref，替代document.querySelector -->
       <div class="tonearm" ref="tonearm">
         <div class="tonearm-head"></div>
         <div class="tonearm-needle"></div>
@@ -21,37 +19,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, watch } from 'vue';
+import { ref, onUnmounted, watch, onMounted, nextTick } from 'vue';
 
 const props = defineProps<{
   isPlaying: boolean;
   coverUrl: string;
 }>();
 
-// 1. 用ref获取DOM元素，符合Vue组件化最佳实践
+// 获取所有需要旋转的元素
 const grooves = ref<HTMLElement | null>(null);
+const texture = ref<HTMLElement | null>(null);
+const vinylRecord = ref<HTMLElement | null>(null);
 const tonearm = ref<HTMLElement | null>(null);
-// 2. 移除未使用的intervalId（原代码未实际使用，造成冗余）
 const animationFrameId = ref<number | null>(null);
-// 3. 新增旋转角度跟踪变量，避免从样式计算角度产生的累积误差
+
+// 旋转状态跟踪 - 使用更精确的数字类型
 const rotationAngle = ref(0);
+const lastUpdateTime = ref<number | null>(null);
+const rotationSpeed = 0.008; // 旋转速度（度/毫秒）
 
 /**
- * 优化凹槽动画逻辑：
- * - 用独立变量track旋转角度，而非从DOM样式中反向计算
- * - 避免每次动画都解析CSS矩阵，提升性能
+ * 精确应用旋转角度到所有元素
  */
-const startGroovesAnimation = () => {
-  if (!grooves.value) return;
+const applyRotation = (angle: number) => {
+  const rotation = `rotate(${angle}deg)`;
+  
+  if (grooves.value) {
+    grooves.value.style.transform = rotation;
+  }
+  if (texture.value) {
+    texture.value.style.transform = rotation;
+  }
+  if (vinylRecord.value) {
+    vinylRecord.value.style.transform = rotation;
+  }
+};
+
+/**
+ * 启动旋转动画
+ */
+const startRotationAnimation = () => {
+  // 确保所有元素都已加载
+  if (!grooves.value || !vinylRecord.value || !texture.value) return;
+  
+  // 记录当前时间，用于精确计算旋转角度
+  lastUpdateTime.value = Date.now();
   
   const animate = () => {
-    if (!grooves.value || !props.isPlaying) return;
+    // 如果不在播放状态，停止动画
+    if (!props.isPlaying) return;
     
-    // 累加旋转角度（每次0.5度，保持原动画速度）
-    rotationAngle.value += 0.5;
-    grooves.value.style.transform = `rotate(${rotationAngle.value}deg)`;
+    // 再次检查元素是否存在
+    if (!grooves.value || !vinylRecord.value || !texture.value) return;
     
-    // 仅在播放状态下继续请求下一帧
+    const currentTime = Date.now();
+    const elapsed = currentTime - (lastUpdateTime.value || currentTime);
+    lastUpdateTime.value = currentTime;
+    
+    // 计算旋转角度，使用更精确的计算方式
+    rotationAngle.value = (rotationAngle.value + rotationSpeed * elapsed) % 360;
+    
+    // 应用旋转
+    applyRotation(rotationAngle.value);
+    
+    // 继续动画
     animationFrameId.value = requestAnimationFrame(animate);
   };
   
@@ -59,42 +90,60 @@ const startGroovesAnimation = () => {
 };
 
 /**
- * 监听播放状态变化：
- * - 用ref获取的tonearm替代document.querySelector，避免全局DOM查询
- * - 增加元素存在性判断，提升代码健壮性
+ * 停止旋转动画并精确保持当前角度
+ */
+const stopRotationAnimation = () => {
+  if (animationFrameId.value) {
+    // 在取消动画前，计算最后一刻的旋转角度
+    if (lastUpdateTime.value && props.isPlaying) {
+      const currentTime = Date.now();
+      const elapsed = currentTime - lastUpdateTime.value;
+      rotationAngle.value = (rotationAngle.value + rotationSpeed * elapsed) % 360;
+      
+      // 强制更新一次旋转状态，确保显示的是最后一刻的状态
+      nextTick(() => {
+        applyRotation(rotationAngle.value);
+      });
+    }
+    
+    cancelAnimationFrame(animationFrameId.value);
+    animationFrameId.value = null;
+  }
+  lastUpdateTime.value = null;
+};
+
+/**
+ * 监听播放状态变化
  */
 watch(() => props.isPlaying, (newVal) => {
   if (newVal) {
-    // 播放：启动凹槽动画 + 唱臂落下
-    startGroovesAnimation();
+    // 播放状态：启动动画
+    startRotationAnimation();
     tonearm.value?.classList.add('playing');
   } else {
-    // 暂停：停止凹槽动画 + 唱臂抬起
+    // 暂停状态：先停止动画，再更新唱臂
+    stopRotationAnimation();
     tonearm.value?.classList.remove('playing');
-    if (animationFrameId.value) {
-      cancelAnimationFrame(animationFrameId.value);
-      animationFrameId.value = null; // 重置动画ID，避免内存泄漏
-    }
   }
-}, { 
-  immediate: true, // 初始渲染时执行一次，确保初始状态正确
-  flush: 'sync'    // 同步执行，避免状态更新延迟导致的动画闪烁
+}, { immediate: true });
+
+/**
+ * 组件清理
+ */
+onUnmounted(() => {
+  stopRotationAnimation();
 });
 
 /**
- * 组件卸载清理：
- * - 仅清理动画帧（intervalId已移除，无需处理）
- * - 避免残留动画导致的性能问题
+ * 初始化旋转状态
  */
-onUnmounted(() => {
-  if (animationFrameId.value) {
-    cancelAnimationFrame(animationFrameId.value);
-  }
+onMounted(() => {
+  applyRotation(rotationAngle.value);
 });
 </script>
 
 <style scoped>
-/* 黑胶唱片样式（保持原视觉效果，无修改） */
+/* 样式保持不变，但优化了过渡效果 */
 .vinyl-container {
   display: flex;
   justify-content: center;
@@ -139,6 +188,7 @@ onUnmounted(() => {
     inset 0 0 40px rgba(0, 0, 0, 0.9);
   transform-style: preserve-3d;
   overflow: hidden;
+  /* 移除旋转过渡效果，避免暂停时的视觉延迟 */
 }
 
 .vinyl-texture {
@@ -187,10 +237,10 @@ onUnmounted(() => {
       rgba(20, 20, 20, 0.9) 1%
     );
   opacity: 0.9;
-  /* 初始状态无旋转 */
   transform: rotate(0deg);
 }
 
+/* 其他样式保持不变 */
 .album-cover {
   position: absolute;
   top: 50%;
@@ -242,7 +292,7 @@ onUnmounted(() => {
   height: 20px;
   background: linear-gradient(to right, #444, #333, #444);
   border-radius: 10px;
-  transform: rotate(-25deg); /* 初始抬起状态 */
+  transform: rotate(-25deg);
   transform-origin: right center;
   z-index: 5;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
@@ -271,12 +321,6 @@ onUnmounted(() => {
   transform-origin: right center;
 }
 
-/* 播放状态动画：仅在playing类存在时生效 */
-.vinyl-record.playing {
-  animation: spin 20s linear infinite;
-}
-
-/* 唱臂播放状态：覆盖初始抬起角度 */
 .vinyl-record-wrapper.playing .tonearm,
 .tonearm.playing {
   transform: rotate(-20deg);
@@ -287,7 +331,6 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* 响应式适配 */
 @media (max-width: 768px) {
   .vinyl-record-wrapper {
     width: 280px;
