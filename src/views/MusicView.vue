@@ -1,14 +1,10 @@
 <template>
   <div class="music-view">
-    <!-- 顶部状态栏，包裹在统一容器中 -->
     <div class="status-container">
       <router-view name="status"></router-view>
     </div>
-    
-    <MusicHeader title="正在播放" />
-    
     <div class="content-container">
-      <!-- 使用命名视图显示子路由组件 -->
+      <MusicHeader title="正在播放" />
       <router-view name="VinyRecord"
       :is-playing="isPlaying"
       :cover-url="musicStore.currentSong?.coverUrl||''"></router-view>
@@ -77,11 +73,8 @@ onMounted(async () => {
 
 <style scoped>
 .music-view {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  padding: 0;
   background: linear-gradient(to bottom, #1a0520, #2d0a31, #1a0520);
   color: #d8bfd8;
   display: flex;
@@ -91,10 +84,11 @@ onMounted(async () => {
   z-index: 10;
 }
 
-/* 新增：状态栏容器，确保两个界面样式一致 */
 .status-container {
   width: 100%;
   box-sizing: border-box;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .content-container {
@@ -134,12 +128,6 @@ onMounted(async () => {
   }
 }
 
-/* 确保状态栏容器不受其他样式影响 */
-::v-deep .header {
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 16px !important;
-  box-sizing: border-box !important;
-}
+
 </style>
     

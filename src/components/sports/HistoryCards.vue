@@ -45,17 +45,76 @@
 </template>
 
 <script setup lang="ts" name="HistoryCards">
+import { ref, onMounted } from 'vue';
 
-const props = defineProps<{
-  activities: Array<{
-    type: string;
-    date: string;
-    distance: number;
-    duration: string;
-    avgSpeed: number;
-    color: string;
-  }>;
-}>();
+// 历史活动数据
+const activities = ref([
+  { 
+    type: '骑行', 
+    date: '昨天',
+    distance: 32.5,
+    duration: '1:45:22',
+    avgSpeed: 18.6,
+    color: 'primary'
+  },
+  { 
+    type: '跑步', 
+    date: '前天',
+    distance: 10.2,
+    duration: '0:58:41',
+    avgSpeed: 10.4,
+    color: 'accent1'
+  },
+  { 
+    type: '徒步', 
+    date: '3天前',
+    distance: 8.7,
+    duration: '2:15:10',
+    avgSpeed: 3.9,
+    color: 'accent3'
+  }
+]);
+
+// 添加新活动
+const addActivity = (newActivity: {
+  type: string;
+  date: string;
+  distance: number;
+  duration: string;
+  avgSpeed: number;
+  color: string;
+}) => {
+  activities.value.unshift(newActivity);
+  // 保存到本地存储
+  saveActivitiesToLocalStorage();
+};
+
+// 从本地存储加载活动
+const loadActivitiesFromLocalStorage = () => {
+  const savedActivities = localStorage.getItem('sportActivities');
+  if (savedActivities) {
+    try {
+      activities.value = JSON.parse(savedActivities);
+    } catch (e) {
+      console.error('Failed to parse saved activities', e);
+    }
+  }
+};
+
+// 保存活动到本地存储
+const saveActivitiesToLocalStorage = () => {
+  localStorage.setItem('sportActivities', JSON.stringify(activities.value));
+};
+
+// 初始化时加载本地存储的活动
+onMounted(() => {
+  loadActivitiesFromLocalStorage();
+});
+
+// 暴露方法给父组件
+defineExpose({
+  addActivity
+});
 </script>
 
 <style>
@@ -69,7 +128,6 @@ const props = defineProps<{
 
 .history-cards {
   margin-top: 24px;
-  
 }
 
 .section-title {

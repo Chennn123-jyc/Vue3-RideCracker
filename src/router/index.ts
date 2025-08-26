@@ -46,7 +46,7 @@ const routes: Array<RouteRecordRaw> = [
       title: '运动模式',
       // 运动界面状态栏主题
       statusBarTheme: {
-        bgColor: '#121826', 
+        bgColor: 'transparent',
         textColor: '#e5e7eb',
         menuIconColor: '#06B6D4', // 运动界面菜单图标青色
         userIconColor: '#06B6D4'  // 运动界面用户图标青色
@@ -79,10 +79,10 @@ const routes: Array<RouteRecordRaw> = [
       title: '音乐中心',
       // 音乐界面默认状态栏主题
       statusBarTheme: {
-        bgColor: '#3b2d58', 
+        bgColor: 'transparent',
         textColor: '#ffffff',
-        menuIconColor: '#4776e6', 
-        userIconColor: '#4776e6',
+        menuIconColor: '#b955d3', 
+        userIconColor: '#b955d3',
       }
     },
     children: [

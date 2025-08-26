@@ -5,7 +5,6 @@
       backgroundColor: statusTheme.bgColor, // 动态背景色（透明）
       color: statusTheme.textColor,
       height: statusTheme.height,
-      padding: statusTheme.padding
     }"
   >
     <div class="header-container">
@@ -79,14 +78,14 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .header {
-  width: 100%; 
-  box-sizing: border-box; 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.5s ease; 
-  /* 移除固定渐变背景，改用动态绑定 */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* 弱化阴影，适应透明背景 */
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px; 
+    background-color: rgba(0, 0, 0, 0.4);
+    color: #e5e7eb;
 }
 
 .header-container {
@@ -108,7 +107,7 @@ onBeforeUnmount(() => {
   border: none;
   cursor: pointer;
   font-size: 20px; 
-  padding: 8px 12px; 
+  padding: 8px ;
   border-radius: 8px;
   transition: all 0.3s ease;
 }
@@ -120,10 +119,7 @@ onBeforeUnmount(() => {
   transform: scale(1.05);
 }
 
-/* 音乐界面按钮 hover 效果（紫色） */
-.music-theme {
-  --hover-bg: rgba(114, 9, 183, 0.1); /* 紫色透明背景 */
-}
+
 .menu-btn:hover.music-theme, 
 .user-btn:hover.music-theme {
   background-color: var(--hover-bg);
@@ -156,4 +152,6 @@ onBeforeUnmount(() => {
     padding: 6px 10px;
   }
 }
+
+
 </style>

@@ -52,7 +52,7 @@
           
           <!-- 速度数值显示 -->
           <div class="speed-value">
-            <span class="speed-number">{{ speed.toFixed(1) }}</span>
+            <span class="speed-number">{{ gpsSpeed }}</span>
             <span class="speed-unit">km/h</span>
           </div>
         </div>
@@ -82,7 +82,7 @@
       <div class="summary-stats">
         <div class="summary-item">
           <span class="summary-label">时间</span>
-          <span class="summary-value">{{ formattedTime }}</span>
+          <span class="summary-value">{{ time }}</span>
         </div>
         <div class="summary-item">
           <span class="summary-label">里程</span>
@@ -112,10 +112,6 @@ const props = defineProps({
     type: Number,
     default: 50 // 默认最大速度为50km/h
   },
-  initialSpeed: {
-    type: Number,
-    default: 0
-  },
   isActive: { // 接收运动状态
     type: Boolean,
     required: true
@@ -123,23 +119,51 @@ const props = defineProps({
   isPaused: { // 接收暂停状态
     type: Boolean,
     required: true
+  },
+  gpsSpeed: { // 实时速度，字符串，例如 "0.0"
+    type: String,
+    default: "0.0"
+  },
+  gpsDistance: { // 实时距离，单位米
+    type: Number,
+    default: 0
+  },
+  time: { // 运动时间，字符串，例如 "00:00"
+    type: String,
+    required: true
+  },
+  distance: { // 运动距离，单位公里
+    type: Number,
+    required: true
+  },
+  avgSpeed: { // 平均速度，单位km/h
+    type: Number,
+    required: true
+  },
+  temperature: { // 温度
+    type: String,
+    required: true
+  },
+  power: { // 功率
+    type: String,
+    required: true
+  },
+  heartRate: { // 心率
+    type: String,
+    required: true
+  },
+  cadence: { // 踏频
+    type: String,
+    required: true
   }
 });
 
-// 响应式数据
-const speed = ref(props.initialSpeed);
-const distance = ref(0);
-const timeInSeconds = ref(0);
-const heartRate = ref(120); // 固定值
-const cadence = ref(80);   // 固定值
-const power = ref(200);    // 固定值
-const temperature = ref(25); // 固定值
-const avgSpeed = ref(0);
-let workoutInterval: number | null = null;
-
 // 圆环计算属性
 const circumference = computed(() => 2 * Math.PI * 45); // 圆周长 = 2πr
-const speedPercentage = computed(() => Math.min(Math.max(speed.value / props.maxSpeed, 0), 1));
+const speedPercentage = computed(() => {
+  const currentSpeed = parseFloat(props.gpsSpeed);
+  return Math.min(Math.max(currentSpeed / props.maxSpeed, 0), 1);
+});
 const ringSize = computed(() => {
   const width = window.innerWidth;
   if (width < 480) return 150;  // 小屏幕
@@ -158,83 +182,11 @@ const indicatorY = computed(() => {
   return 50 + 45 * Math.sin(angle);
 });
 
-// 格式化时间显示 (mm:ss)
-const formattedTime = computed(() => {
-  const minutes = Math.floor(timeInSeconds.value / 60);
-  const seconds = timeInSeconds.value % 60;
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-});
-
 // 计算运动状态文本
 const workoutStatus = computed(() => {
   if (!props.isActive) return '未开始';
   if (props.isPaused) return '已暂停';
   return '运动中';
-});
-
-// 根据运动状态更新数据
-watch(() => props.isActive, (isActive) => {
-  if (isActive && !props.isPaused) {
-    // 开始运动
-    workoutInterval = window.setInterval(() => {
-      // 更新时间
-      if (!props.isPaused) {
-        timeInSeconds.value++;
-      }
-      
-      // 随机小幅度变化速度（模拟真实运动）
-      const change = (Math.random() - 0.5) * 2; // -1 到 1 之间的随机变化
-      speed.value = Math.max(0, Math.min(props.maxSpeed, speed.value + change));
-      
-      // 根据速度更新距离 (km = km/h * h = km/h * (s/3600))
-      if (!props.isPaused) {
-        distance.value += speed.value / 3600;
-      }
-      
-      // 更新平均速度
-      avgSpeed.value = timeInSeconds.value > 0 ? 
-        (distance.value / (timeInSeconds.value / 3600)) : 0;
-    }, 1000);
-  } else if (workoutInterval) {
-    // 停止运动
-    clearInterval(workoutInterval);
-    workoutInterval = null;
-  }
-});
-
-// 监听暂停状态
-watch(() => props.isPaused, (isPaused) => {
-  if (isPaused) {
-    // 暂停时停止速度波动
-    if (workoutInterval) {
-      clearInterval(workoutInterval);
-      workoutInterval = null;
-    }
-  } else if (props.isActive) {
-    // 继续运动
-    workoutInterval = window.setInterval(() => {
-      // 更新时间
-      timeInSeconds.value++;
-      
-      // 随机小幅度变化速度（模拟真实运动）
-      const change = (Math.random() - 0.5) * 2; // -1 到 1 之间的随机变化
-      speed.value = Math.max(0, Math.min(props.maxSpeed, speed.value + change));
-      
-      // 根据速度更新距离 (km = km/h * h = km/h * (s/3600))
-      distance.value += speed.value / 3600;
-      
-      // 更新平均速度
-      avgSpeed.value = timeInSeconds.value > 0 ? 
-        (distance.value / (timeInSeconds.value / 3600)) : 0;
-    }, 1000);
-  }
-});
-
-// 清理定时器
-onUnmounted(() => {
-  if (workoutInterval) {
-    clearInterval(workoutInterval);
-  }
 });
 </script>
 
