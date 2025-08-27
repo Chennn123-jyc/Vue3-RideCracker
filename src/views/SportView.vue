@@ -56,6 +56,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import useGPS from '@/composables/useGPS';
 import HistoryCards from '@/components/sports/HistoryCards.vue';
+import { SPORT_MODES, SPORT_DEFAULTS } from '@/constants/sports';
+
 
 // GPS相关状态
 const { 
@@ -70,7 +72,7 @@ const {
 // 运动状态管理
 const isActive = ref(false);
 const isPaused = ref(false);
-const activeMode = ref('cycling');
+const activeMode = ref(SPORT_DEFAULTS.DEFAULT_MODE);
 const startTime = ref<number | null>(null);
 const pausedTime = ref<number>(0); // 暂停时累计的时间
 const elapsedTime = ref(0);
@@ -84,11 +86,7 @@ const heartRate = ref('--');
 const cadence = ref('--');
 
 // 运动模式
-const modes = ref([
-  { id: 'cycling', label: '骑行', icon: 'fa-bicycle' },
-  { id: 'running', label: '跑步', icon: 'fa-running' },
-  { id: 'hiking', label: '徒步', icon: 'fa-hiking' },
-]);
+const modes = ref(SPORT_MODES);
 
 // HistoryCards组件引用
 const historyCardsRef = ref();
