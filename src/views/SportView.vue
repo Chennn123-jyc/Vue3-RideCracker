@@ -1,15 +1,19 @@
 <template>
   <div class="sport-view">
     <div class="status-container">
-      <router-view name="status"></router-view>
+      <router-view name="status" />
     </div>
+
     <!-- GPS错误提示 -->
     <div v-if="error" class="gps-error">
       <i class="fa fa-exclamation-triangle"></i>
       <span>{{ error }}</span>
     </div>
 
-    <main class="main-content">
+    <main 
+      class="main-content" 
+      :class="{ 'main-content--shifted': menuStore.isOpen  }"  
+    >
       <div class="app-header">
         <h1>骑迹运动</h1>
       </div>
@@ -57,7 +61,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import useGPS from '@/composables/useGPS';
 import HistoryCards from '@/components/sports/HistoryCards.vue';
 import { SPORT_MODES, SPORT_DEFAULTS } from '@/constants/sports';
+import { useMenuStore } from '@/stores/menuStore';
 
+const menuStore = useMenuStore();
 
 // GPS相关状态
 const { 
@@ -74,7 +80,7 @@ const isActive = ref(false);
 const isPaused = ref(false);
 const activeMode = ref(SPORT_DEFAULTS.DEFAULT_MODE);
 const startTime = ref<number | null>(null);
-const pausedTime = ref<number>(0); // 暂停时累计的时间
+const pausedTime = ref<number>(0);
 const elapsedTime = ref(0);
 const timer = ref<number | null>(null);
 
@@ -107,33 +113,25 @@ const formattedTime = computed(() => {
 const startWorkout = () => {
   isActive.value = true;
   isPaused.value = false;
-  
-  //启动GPS跟踪
   startTracking();
 
-  // 如果是第一次开始，重置时间
   if (startTime.value === null) {
     startTime.value = Date.now();
     elapsedTime.value = 0;
-  } 
-  // 如果是暂停后继续，调整开始时间
-  else if (isPaused.value) {
+  } else if (isPaused.value) {
     const currentTime = Date.now();
     const pauseDuration = currentTime - pausedTime.value;
     startTime.value += pauseDuration;
   }
   
-  // 开始/继续计时
   timer.value = window.setInterval(() => {
     if (startTime.value !== null) {
       elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
       
-      // 计算平均速度
       if (elapsedTime.value > 0) {
         avgSpeed.value = (distance.value / 1000) / (elapsedTime.value / 3600);
       }
       
-      // 每5秒更新一次其他运动数据
       if (elapsedTime.value % 5 === 0) {
         updateWorkoutData();
       }
@@ -146,31 +144,26 @@ const togglePause = () => {
   isPaused.value = !isPaused.value;
   
   if (isPaused.value) {
-    // 暂停运动
     stopTracking();
     if (timer.value) {
       clearInterval(timer.value);
       timer.value = null;
     }
-    // 记录暂停时间点
     pausedTime.value = Date.now();
   } else {
-    // 继续运动
     startTracking();
     startWorkout();
   }
 };
 
-// 结束运动（保存数据）
+// 结束运动
 const endWorkout = () => {
   isActive.value = false;
   isPaused.value = false;
   
-  // 清除定时器
   if (timer.value) clearInterval(timer.value);
   timer.value = null;
   
-  // 添加新活动记录
   if (elapsedTime.value > 0) {
     const modeLabel = modes.value.find(m => m.id === activeMode.value)?.label || '运动';
     historyCardsRef.value?.addActivity({
@@ -183,15 +176,12 @@ const endWorkout = () => {
     });
   }
   
-  //停止GPS跟踪
   stopTracking();
-  // 重置数据
   resetWorkoutData();
 };
 
-// 更新运动数据（其他传感器数据）
+// 更新运动数据
 const updateWorkoutData = () => {
-  // 模拟其他传感器数据
   temperature.value = Math.floor(Math.random() * 15 + 20).toString();
   power.value = Math.floor(Math.random() * 100 + 100).toString();
   heartRate.value = Math.floor(Math.random() * 40 + 120).toString();
@@ -213,10 +203,8 @@ const resetWorkoutData = () => {
 
 // 设置活动模式
 const setActiveMode = (mode: string) => {
-  // 只能在未开始或暂停时切换模式
   if (!isActive.value || isPaused.value) {
     activeMode.value = mode;
-    // 切换模式时重置数据
     if (!isActive.value) {
       resetWorkoutData();
     }
@@ -225,12 +213,10 @@ const setActiveMode = (mode: string) => {
 
 // 初始化
 onMounted(() => {
-  // 检查地理位置权限
   if (navigator.permissions) {
     navigator.permissions.query({ name: 'geolocation' })
       .then(permissionStatus => {
         if (permissionStatus.state === 'prompt') {
-          // 可以显示提示信息，引导用户授权
           console.log('需要GPS权限来记录运动数据');
         } else if (permissionStatus.state === 'denied') {
           error.value = 'GPS权限已被拒绝,请在浏览器设置中启用';
@@ -254,7 +240,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* 样式保持不变 */
 .sport-view {
   background-color: #121826;
   color: #e5e7eb;
@@ -268,7 +253,7 @@ onBeforeUnmount(() => {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  position: relative;
+  position: relative; 
 }
 
 .status-container {
@@ -287,6 +272,11 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  transition: transform 0.3s ease; 
+}
+
+.main-content--shifted {
+  transform: translateX(clamp(80%, 300px, 100%));
 }
 
 .app-header {
@@ -324,7 +314,6 @@ onBeforeUnmount(() => {
   margin-bottom: 90px;
 }
 
-/* 统一两个界面在大屏幕上的最大宽度 */
 @media (min-width: 768px) {
   .sport-view {
     max-width: 768px;
@@ -353,6 +342,7 @@ onBeforeUnmount(() => {
   padding: 0 !important;
   margin: 0 !important;
 }
+
 .gps-error {
   background-color: #fef2f2;
   color: #dc2626;

@@ -1,34 +1,32 @@
 <template>
   <div class="music-view">
     <div class="status-container">
-      <router-view name="status"></router-view>
+      <router-view name="status" />
     </div>
-    <div class="content-container">
+    <div class="content-container" :class="{ 'content-container--shifted': menuStore.isOpen }">
       <MusicHeader title="正在播放" />
-      <router-view name="VinyRecord"
-      :is-playing="isPlaying"
-      :cover-url="musicStore.currentSong?.coverUrl||''"></router-view>
+      <router-view name="VinyRecord" :is-playing="isPlaying" :cover-url="musicStore.currentSong?.coverUrl||''"></router-view>
       <router-view name="info"></router-view>
       <router-view name="progress"></router-view>
       <router-view name="controls"></router-view>
       <router-view name="functions"></router-view>
       <router-view name="upload"></router-view>
     </div>
-    
-    <!-- 歌词页面（独立路由） -->
     <router-view name="lyrics"></router-view>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted,ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useMusicStore } from '@/stores/musicStore';
 import MusicHeader from '@/components/music/MusicHeader.vue';
 import useAudioPlayer from '@/composables/useAudioPlayer';
-import type { Song } from '@/types/music';  // 确保导入Song类型
+import type { Song } from '@/types/music';  
+import { useMenuStore } from '@/stores/menuStore'; 
 
-// 获取音乐存储实例
+const menuStore = useMenuStore();
+
 const musicStore = useMusicStore();
 // 通过storeToRefs解构响应式状态
 const { isPlaying, currentSong } = storeToRefs(musicStore);  // 关键：获取currentSong
@@ -99,9 +97,15 @@ onMounted(async () => {
   overflow-y: auto;
   scrollbar-width: none;
   scrollbar-color: #b955d3 rgba(45, 10, 49, 0.5);
-  scrollbar-width: none;
   -ms-overflow-style: none;
+  transition: transform 0.3s ease;
+  overflow-x: hidden;
 }
+
+.content-container--shifted {
+  transform: translateX(clamp(80%, 300px, 100%));
+}
+
 
 
 /* 自定义滚动条样式 */
@@ -119,7 +123,6 @@ onMounted(async () => {
   border-radius: 3px;
 }
 
-/* 响应式调整 - 保持与运动界面一致的最大宽度 */
 @media (min-width: 768px) {
   .music-view {
     max-width: 768px;

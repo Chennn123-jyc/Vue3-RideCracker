@@ -2,14 +2,14 @@
   <header 
     class="header" 
     :style="{
-      backgroundColor: statusTheme.bgColor, // 动态背景色（透明）
+      backgroundColor: statusTheme.bgColor,
       color: statusTheme.textColor,
       height: statusTheme.height,
     }"
   >
     <div class="header-container">
       <div class="header-left">
-        <button class="menu-btn">
+        <button class="menu-btn" @click="toggleMenu">
           <i 
             class="fa fa-bars" 
             :style="{ color: statusTheme.menuIconColor }"  
@@ -28,31 +28,63 @@
       </div>
     </div>
   </header>
+  
+  <!-- 侧边菜单 -->
+  <SideMenu 
+    :isOpen="menuStore.isOpen" 
+    :theme="menuStore.theme"
+    @close-menu="menuStore.closeMenu" 
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue';
+import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue';
 import { useRoute } from 'vue-router';
-
+import SideMenu from '@/components/settings/SideMenu.vue';
+import { useMenuStore } from '@/stores/menuStore'; 
+import { ThemeType } from '@/styles/theme'; 
 const route = useRoute();
+const menuStore = useMenuStore();
 const currentTime = ref('');
 let timeInterval: NodeJS.Timeout | null = null;
 
-// 主题配置：默认透明背景 + 音乐界面紫色按钮
+
+const emit = defineEmits<{
+  (e: 'openMenu'): void
+}>();
+// 主题配置
 const statusTheme = ref({
-  bgColor: 'transparent', // 默认透明背景
+  bgColor: 'transparent',
   textColor: '#e5e7eb',
-  menuIconColor: '#06B6D4', // 运动界面菜单图标色（青色）
-  userIconColor: '#06B6D4', // 运动界面用户图标色（青色）
+  menuIconColor: '#06B6D4',
+  userIconColor: '#06B6D4',
   height: '56px',
   padding: '0 16px'
 });
 
-// 更新主题配置（路由元信息优先）
+// 更新主题配置
 const updateStatusTheme = () => {
   if (route.meta.statusBarTheme) {
     statusTheme.value = { ...statusTheme.value, ...route.meta.statusBarTheme };
   }
+  
+  // 新增：通过 matched 数组查找 theme
+  let theme: ThemeType = 'sport'; // 默认主题
+  for (const record of route.matched) {
+    if (record.meta.theme) {
+      theme = record.meta.theme as ThemeType;
+      break;
+    }
+  }
+  menuStore.setTheme(theme);
+  console.log('设置主题:', theme);
+};
+watch(() => route.name, updateStatusTheme, { immediate: true });
+
+// 切换菜单
+const toggleMenu = () => {
+  menuStore.toggleMenu();
+  emit('openMenu'); 
 };
 
 // 时间更新逻辑
@@ -77,6 +109,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* 保持原有样式不变 */
 .header {
     width: 100%;
     box-sizing: border-box;
@@ -101,7 +134,6 @@ onBeforeUnmount(() => {
   gap: 16px; 
 }
 
-/* 按钮样式优化 */
 .menu-btn, .user-btn {
   background: none;
   border: none;
@@ -112,17 +144,8 @@ onBeforeUnmount(() => {
   transition: all 0.3s ease;
 }
 
-/* 运动界面按钮 hover 效果（青色） */
-.menu-btn:hover:not(.music-theme), 
-.user-btn:hover:not(.music-theme) {
-  background-color: rgba(6, 182, 212, 0.1); /* 青色透明背景 */
-  transform: scale(1.05);
-}
-
-
-.menu-btn:hover.music-theme, 
-.user-btn:hover.music-theme {
-  background-color: var(--hover-bg);
+.menu-btn:hover, .user-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
   transform: scale(1.05);
 }
 
@@ -137,7 +160,6 @@ onBeforeUnmount(() => {
   font-size: 18px; 
 }
 
-/* 响应式适配 */
 @media (max-width: 375px) {
   .header-left, .header-right {
     gap: 12px; 
@@ -152,6 +174,4 @@ onBeforeUnmount(() => {
     padding: 6px 10px;
   }
 }
-
-
 </style>

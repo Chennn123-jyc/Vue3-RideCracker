@@ -15,7 +15,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // 移除 vue 别名，使用默认解析
     }
+  },
+  define:{
+    'process.env':{}
   }
 })

@@ -44,7 +44,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: { 
       showBottomNav: true,
       title: '运动模式',
-      // 运动界面状态栏主题
+      theme:'sport',
       statusBarTheme: {
         bgColor: 'transparent',
         textColor: '#e5e7eb',
@@ -57,11 +57,9 @@ const routes: Array<RouteRecordRaw> = [
         path: '',
         name: 'sport-main',
         components: {
-          // 运动界面内容组件
           ControlButtons: ControlButtons,
           HistoryCards: HistoryCards,
           SportStats: SportStats,
-          // 运动界面的状态栏子路由
           status: StatusBar 
         },
         meta: {
@@ -77,7 +75,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: { 
       showBottomNav: true,
       title: '音乐中心',
-      // 音乐界面默认状态栏主题
+      theme:'music',
       statusBarTheme: {
         bgColor: 'transparent',
         textColor: '#ffffff',
@@ -90,14 +88,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '',
         name: 'music-main',
         components: {
-          // 音乐主界面内容组件
           info: SongInfo,
           progress: ProgressBar, 
           controls: PlayControls,
           functions: FunctionBar,
           upload: UploadMusic,
           VinyRecord: VinyRecord,
-          // 音乐主界面的状态栏子路由
           status: StatusBar 
         },
         meta: {
