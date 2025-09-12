@@ -128,6 +128,35 @@ const routes: Array<RouteRecordRaw> = [
       }
     ]
   },
+  {
+    path: '/share',
+    name: 'share',
+    component: () => import('@/views/ShareView.vue'),
+    meta: { 
+      showBottomNav: true,
+      title: '分享',
+      theme: 'share', // 添加主题
+      statusBarTheme: {
+        bgColor: 'transparent',
+        textColor: '#ffffff',
+        menuIconColor: '#8A2BE2', // 使用新的分享主题色
+        userIconColor: '#8A2BE2',
+      }
+    },
+    children: [
+      {
+        path: 'public',
+        name: 'share-public',
+        component: () => import('@/components/share/PublicShare.vue')
+      },
+      {
+        path: 'personal',
+        name: 'share-personal', 
+        component: () => import('@/components/share/PersonalNotes.vue')
+      }
+    ]
+  },
+
   // 404路由处理
   {
     path: '/:pathMatch(.*)*',

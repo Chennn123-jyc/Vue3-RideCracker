@@ -1,40 +1,42 @@
 <template>
-  <header 
-    class="header" 
-    :style="{
-      backgroundColor: statusTheme.bgColor,
-      color: statusTheme.textColor,
-      height: statusTheme.height,
-    }"
-  >
-    <div class="header-container">
-      <div class="header-left">
-        <button class="menu-btn" @click="toggleMenu">
-          <i 
-            class="fa fa-bars" 
-            :style="{ color: statusTheme.menuIconColor }"  
-          ></i>
-        </button>
-        <span class="current-time">{{ currentTime }}</span>
+  <div class="status-bar-wrapper">
+    <header 
+      class="header" 
+      :style="{
+        backgroundColor: statusTheme.bgColor,
+        color: statusTheme.textColor,
+        height: statusTheme.height,
+      }"
+    >
+      <div class="header-container">
+        <div class="header-left">
+          <button class="menu-btn" @click="toggleMenu">
+            <i 
+              class="fa fa-bars" 
+              :style="{ color: statusTheme.menuIconColor }"  
+            ></i>
+          </button>
+          <span class="current-time">{{ currentTime }}</span>
+        </div>
+        
+        <div class="header-right">
+          <button class="user-btn">
+            <i 
+              class="fa fa-user-circle" 
+              :style="{ color: statusTheme.userIconColor }"  
+            ></i>
+          </button>
+        </div>
       </div>
-      
-      <div class="header-right">
-        <button class="user-btn">
-          <i 
-            class="fa fa-user-circle" 
-            :style="{ color: statusTheme.userIconColor }"  
-          ></i>
-        </button>
-      </div>
-    </div>
-  </header>
-  
-  <!-- 侧边菜单 -->
-  <SideMenu 
-    :isOpen="menuStore.isOpen" 
-    :theme="menuStore.theme"
-    @close-menu="menuStore.closeMenu" 
-  />
+    </header>
+    
+    <!-- 侧边菜单 -->
+    <SideMenu 
+      :isOpen="menuStore.isOpen" 
+      :theme="menuStore.theme"
+      @close-menu="menuStore.closeMenu" 
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -43,15 +45,31 @@ import { useRoute } from 'vue-router';
 import SideMenu from '@/components/settings/SideMenu.vue';
 import { useMenuStore } from '@/stores/menuStore'; 
 import { ThemeType } from '@/styles/theme'; 
+
 const route = useRoute();
 const menuStore = useMenuStore();
 const currentTime = ref('');
 let timeInterval: NodeJS.Timeout | null = null;
 
+// 定义 props
+defineProps({
+  theme: {
+    type: Object,
+    default: () => ({
+      bgColor: 'transparent',
+      textColor: '#e5e7eb',
+      menuIconColor: '#06B6D4',
+      userIconColor: '#06B6D4',
+      height: '56px',
+      padding: '0 16px'
+    })
+  }
+});
 
 const emit = defineEmits<{
   (e: 'openMenu'): void
 }>();
+
 // 主题配置
 const statusTheme = ref({
   bgColor: 'transparent',
@@ -109,6 +127,11 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.status-bar-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
 /* 保持原有样式不变 */
 .header {
     width: 100%;

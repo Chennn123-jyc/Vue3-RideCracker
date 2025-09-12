@@ -166,16 +166,22 @@ const endWorkout = () => {
   
   if (elapsedTime.value > 0) {
     const modeLabel = modes.value.find(m => m.id === activeMode.value)?.label || '运动';
-    historyCardsRef.value?.addActivity({
+    const activity = {
       type: modeLabel,
       date: '刚刚',
       distance: parseFloat((distance.value / 1000).toFixed(1)),
       duration: formattedTime.value,
       avgSpeed: parseFloat(avgSpeed.value.toFixed(1)),
       color: 'primary'
-    });
+    };
+
+    historyCardsRef.value?.addActivity(activity);
+    
+  // 保存到localStorage供分享使用
+  const activities = JSON.parse(localStorage.getItem('sportActivities') || '[]');
+    activities.unshift(activity);
+    localStorage.setItem('sportActivities', JSON.stringify(activities));
   }
-  
   stopTracking();
   resetWorkoutData();
 };

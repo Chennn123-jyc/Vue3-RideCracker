@@ -1,4 +1,4 @@
-export type ThemeType = 'sport' | 'music' | 'health';
+export type ThemeType = 'sport' | 'music' | 'share';
 
 // 定义主题配置的类型
 export type ThemeConfig = {
@@ -36,15 +36,15 @@ export const themeConfig: ThemeConfig = {
     '--theme-text-light': '#b088b6',
     '--theme-hover-bg': 'rgba(185, 85, 211, 0.2)',
   },
-  health: {
-    '--theme-primary': '#10B981',
-    '--theme-secondary': '#34D399',
-    '--theme-bg': 'linear-gradient(to bottom, #064e3b, #059669)',
-    '--theme-card-bg': 'rgba(5, 150, 105, 0.2)',
-    '--theme-border': 'rgba(16, 185, 129, 0.3)',
-    '--theme-text': '#d1fae5',
-    '--theme-text-light': '#6ee7b7',
-    '--theme-hover-bg': 'rgba(16, 185, 129, 0.2)',
+  share: {
+    '--theme-primary': '#8A2BE2', // 蓝紫色
+    '--theme-secondary': '#9370DB',
+    '--theme-bg': 'linear-gradient(to bottom, #2d1a42, #4a2d7a)',
+    '--theme-card-bg': 'rgba(74, 45, 122, 0.7)',
+    '--theme-border': 'rgba(138, 43, 226, 0.3)',
+    '--theme-text': '#e6e6fa',
+    '--theme-text-light': '#b8a1d6',
+    '--theme-hover-bg': 'rgba(138, 43, 226, 0.2)',
   },
 };
 

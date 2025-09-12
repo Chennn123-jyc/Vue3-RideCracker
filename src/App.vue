@@ -10,6 +10,7 @@ import { RouterView } from 'vue-router';
 import BottomNavigation from './components/BottomNavigation.vue';
 import { useUserStore } from './stores/userStore';
 
+
 // 初始化用户状态
 const userStore = useUserStore();
 userStore.init();

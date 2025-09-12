@@ -189,7 +189,9 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const props = defineProps<{
-  isOpen: boolean
+  isOpen: boolean,
+  onCloseMenu: Function,
+  theme: String
 }>()
 
 const currentThemeVars = computed(() => {
@@ -400,6 +402,42 @@ onMounted(() => {
   background-color: #b955d3;
 }
 
+/* 分享主题 */
+.side-menu.share {
+  background: linear-gradient(to bottom, #2d1a42, #4a2d7a);
+}
+
+.side-menu.share .user-info-section {
+  background-color: rgba(74, 45, 122, 0.7);
+  border-bottom: 1px solid rgba(138, 43, 226, 0.3);
+}
+
+.side-menu.share .auth-section,
+.side-menu.share .settings-section {
+  border-bottom: 1px solid rgba(138, 43, 226, 0.3);
+}
+
+.side-menu.share .auth-tabs {
+  border-bottom: 1px solid rgba(138, 43, 226, 0.3);
+}
+
+.side-menu.share .tab-btn.active {
+  color: #8A2BE2;
+  border-bottom: 2px solid #8A2BE2;
+}
+
+.side-menu.share .auth-submit-btn {
+  background: linear-gradient(135deg, #8A2BE2, #9370DB);
+}
+
+.side-menu.share .settings-list button i:first-child {
+  color: #8A2BE2;
+}
+
+.side-menu.share .toggle-switch input:checked + .slider {
+  background-color: #8A2BE2;
+}
+
 /* 通用样式 */
 .user-info-section {
   padding: 20px;
@@ -445,6 +483,14 @@ onMounted(() => {
   color: #b955d3;
 }
 
+.side-menu.share .user-avatar {
+  background-color: rgba(138, 43, 226, 0.3);
+}
+
+.side-menu.share .user-avatar i {
+  color: #8A2BE2;
+}
+
 .user-details h3 {
   color: #fff;
   margin-bottom: 5px;
@@ -462,6 +508,10 @@ onMounted(() => {
 
 .side-menu.music .user-details p {
   color: #b088b6;
+}
+
+.side-menu.share .user-details p {
+  color: #b8a1d6;
 }
 
 /* 认证区域 */
@@ -489,6 +539,10 @@ onMounted(() => {
 
 .side-menu.music .tab-btn {
   color: #b088b6;
+}
+
+.side-menu.share .tab-btn {
+  color: #b8a1d6;
 }
 
 .auth-form {
@@ -519,6 +573,12 @@ onMounted(() => {
   color: #fff;
 }
 
+.side-menu.share .form-group input {
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  background-color: rgba(74, 45, 122, 0.5);
+  color: #fff;
+}
+
 .form-group input:focus {
   outline: none;
 }
@@ -529,6 +589,10 @@ onMounted(() => {
 
 .side-menu.music .form-group input:focus {
   border-color: #b955d3;
+}
+
+.side-menu.share .form-group input:focus {
+  border-color: #8A2BE2;
 }
 
 .toggle-password {
@@ -547,6 +611,10 @@ onMounted(() => {
 
 .side-menu.music .toggle-password {
   color: #b088b6;
+}
+
+.side-menu.share .toggle-password {
+  color: #b8a1d6;
 }
 
 .auth-submit-btn {
@@ -588,6 +656,11 @@ onMounted(() => {
   color: #b088b6;
 }
 
+.side-menu.share .auth-divider span {
+  background-color: #2d1a42;
+  color: #b8a1d6;
+}
+
 .auth-divider:before {
   content: '';
   position: absolute;
@@ -604,6 +677,10 @@ onMounted(() => {
 
 .side-menu.music .auth-divider:before {
   background-color: rgba(185, 85, 211, 0.3);
+}
+
+.side-menu.share .auth-divider:before {
+  background-color: rgba(138, 43, 226, 0.3);
 }
 
 .social-auth {
@@ -659,6 +736,10 @@ onMounted(() => {
   color: #b955d3;
 }
 
+.side-menu.share .settings-section h4 {
+  color: #8A2BE2;
+}
+
 .settings-list {
   list-style: none;
   padding: 0;
@@ -698,6 +779,14 @@ onMounted(() => {
   background-color: rgba(185, 85, 211, 0.2);
 }
 
+.side-menu.share .settings-list button {
+  color: #e6e6fa;
+}
+
+.side-menu.share .settings-list button:hover {
+  background-color: rgba(138, 43, 226, 0.2);
+}
+
 .settings-list button i:first-child {
   margin-right: 10px;
   width: 20px;
@@ -718,6 +807,10 @@ onMounted(() => {
 
 .side-menu.music .settings-list button i:last-child {
   color: #b088b6;
+}
+
+.side-menu.share .settings-list button i:last-child {
+  color: #b8a1d6;
 }
 
 /* 切换开关 */
@@ -775,6 +868,10 @@ onMounted(() => {
   border-top: 1px solid rgba(185, 85, 211, 0.3);
 }
 
+.side-menu.share .menu-footer {
+  border-top: 1px solid rgba(138, 43, 226, 0.3);
+}
+
 .logout-btn, .close-menu-btn {
   width: 100%;
   padding: 12px;
@@ -811,6 +908,15 @@ onMounted(() => {
   background-color: rgba(239, 68, 68, 0.3);
 }
 
+.side-menu.share .logout-btn {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.side-menu.share .logout-btn:hover {
+  background-color: rgba(239, 68, 68, 0.3);
+}
+
 .side-menu.sport .close-menu-btn {
   background-color: rgba(30, 41, 59, 0.7);
   color: #94a3b8;
@@ -827,6 +933,15 @@ onMounted(() => {
 
 .side-menu.music .close-menu-btn:hover {
   background-color: rgba(185, 85, 211, 0.2);
+}
+
+.side-menu.share .close-menu-btn {
+  background-color: rgba(74, 45, 122, 0.7);
+  color: #b8a1d6;
+}
+
+.side-menu.share .close-menu-btn:hover {
+  background-color: rgba(138, 43, 226, 0.2);
 }
 
 /* 响应式设计 */

@@ -1,23 +1,26 @@
 <template>
-    <button 
-      @click="$router.push(route)"
-      class="nav-item"
+  <router-link 
+    :to="route"
+    class="nav-item"
+    :style="buttonStyle"
+    @click="handleClick"
+  >
+    <font-awesome-icon 
+      :icon="['fas', icon]" 
+      class="nav-icon"
+      :class="{'active': isActive}"
+    />
+    <span 
+      class="nav-label"
+      :class="{'active': isActive}"
     >
-      <font-awesome-icon 
-        :icon="['fas', icon]" 
-        class="nav-icon"
-        :class=" {'active':isActive}"
-      />
-      <span 
-        class="nav-label"
-        :class=" {'active':isActive}"
-      >
-        {{ label }}
-      </span>
-    </button>
-  </template>
+      {{ label }}
+    </span>
+  </router-link>
+</template>
 
 <script setup lang="ts" name="NavItem">
+import { computed } from 'vue';
 
 const props = defineProps({
   icon: {
@@ -35,16 +38,28 @@ const props = defineProps({
   isActive: {
     type: Boolean,
     default: false
+  },
+  activeColor: {
+    type: String,
+    default: '#3B82F6'
   }
-})
+});
+
+const emit = defineEmits(['click']);
+
+const handleClick = () => {
+  emit('click');
+};
+
+// 计算按钮样式
+const buttonStyle = computed(() => {
+  return {
+    '--active-color': props.activeColor
+  };
+});
 </script>
 
 <style scoped>
-button {
-  background: none;
-  border: none;
-}
-
 .nav-item {
   background: none;
   border: none;
@@ -56,29 +71,36 @@ button {
   height: 100%;
   flex: 1;
   transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none; /* 移除链接下划线 */
 }
+
 .nav-item:active {
   transform: scale(0.95);
 }
+
 .nav-icon {
-  font-size: 1.25rem; /* 20px */
-  margin-bottom: 0.25rem; /* 4px */
-  color: #9CA3AF; /* 默认图标颜色 - gray-400 */
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+  color: #E5E7EB;
   transition: color 0.2s ease;
 }
+
 .nav-icon.active {
-  color: #3B82F6; /* 激活状态颜色 - blue-500 */
+  color: var(--active-color, #3B82F6);
 }
+
 .nav-label {
-  font-size: 0.75rem; /* 12px */
-  font-weight: 500; /* medium font weight */
-  color: #9CA3AF; /* 默认文字颜色 - gray-400 */
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #E5E7EB;
   transition: color 0.2s ease;
-  letter-spacing: 0.025em; /* 轻微字母间距 */
-  text-transform: uppercase; /* 大写文本 */
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
+
 .nav-label.active {
-  color: #3B82F6; /* 激活状态颜色 - blue-500 */
-  font-weight: 600; /* 激活状态更粗 */
+  color: var(--active-color, #3B82F6);
+  font-weight: 600;
 }
 </style>

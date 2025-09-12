@@ -1,0 +1,270 @@
+/* 侧边菜单主题变量定义 */
+:root {
+    /* 运动主题变量 */
+    --sport-menu-bg: linear-gradient(to bottom, #0f172a, #1e293b);
+    --sport-user-section-bg: rgba(30, 41, 59, 0.7);
+    --sport-border-color: rgba(6, 182, 212, 0.3);
+    --sport-primary-color: #06B6D4;
+    --sport-text-secondary: #94a3b8;
+    --sport-button-gradient: linear-gradient(135deg, #06B6D4, #3B82F6);
+    --sport-avatar-bg: rgba(6, 182, 212, 0.3);
+    --sport-input-bg: rgba(30, 41, 59, 0.5);
+    --sport-input-border: rgba(6, 182, 212, 0.3);
+    --sport-divider-bg: rgba(6, 182, 212, 0.3);
+    --sport-settings-h4: #06B6D4;
+    --sport-settings-text: #e2e8f0;
+    --sport-settings-hover: rgba(6, 182, 212, 0.2);
+    --sport-close-btn-bg: rgba(30, 41, 59, 0.7);
+    --sport-close-btn-text: #94a3b8;
+    --sport-close-btn-hover: rgba(6, 182, 212, 0.2);
+    --sport-logout-btn-bg: rgba(239, 68, 68, 0.2);
+    --sport-logout-btn-text: #ef4444;
+    --sport-logout-btn-hover: rgba(239, 68, 68, 0.3);
+  
+    /* 音乐主题变量 */
+    --music-menu-bg: linear-gradient(to bottom, #1a0520, #2d0a31);
+    --music-user-section-bg: rgba(45, 10, 49, 0.7);
+    --music-border-color: rgba(185, 85, 211, 0.3);
+    --music-primary-color: #b955d3;
+    --music-text-secondary: #b088b6;
+    --music-button-gradient: linear-gradient(135deg, #b955d3, #8a2be2);
+    --music-avatar-bg: rgba(185, 85, 211, 0.3);
+    --music-input-bg: rgba(45, 10, 49, 0.5);
+    --music-input-border: rgba(185, 85, 211, 0.3);
+    --music-divider-bg: rgba(185, 85, 211, 0.3);
+    --music-settings-h4: #b955d3;
+    --music-settings-text: #d8bfd8;
+    --music-settings-hover: rgba(185, 85, 211, 0.2);
+    --music-close-btn-bg: rgba(45, 10, 49, 0.7);
+    --music-close-btn-text: #b088b6;
+    --music-close-btn-hover: rgba(185, 85, 211, 0.2);
+    --music-logout-btn-bg: rgba(239, 68, 68, 0.2);
+    --music-logout-btn-text: #ef4444;
+    --music-logout-btn-hover: rgba(239, 68, 68, 0.3);
+  }
+  
+  /* 运动主题样式 */
+  .side-menu.sport {
+    background: var(--sport-menu-bg);
+  }
+  
+  .side-menu.sport .user-info-section {
+    background-color: var(--sport-user-section-bg);
+    border-bottom: 1px solid var(--sport-border-color);
+  }
+  
+  .side-menu.sport .auth-section,
+  .side-menu.sport .settings-section {
+    border-bottom: 1px solid var(--sport-border-color);
+  }
+  
+  .side-menu.sport .auth-tabs {
+    border-bottom: 1px solid var(--sport-border-color);
+  }
+  
+  .side-menu.sport .tab-btn.active {
+    color: var(--sport-primary-color);
+    border-bottom: 2px solid var(--sport-primary-color);
+  }
+  
+  .side-menu.sport .auth-submit-btn {
+    background: var(--sport-button-gradient);
+  }
+  
+  .side-menu.sport .settings-list button i:first-child {
+    color: var(--sport-primary-color);
+  }
+  
+  .side-menu.sport .toggle-switch input:checked + .slider {
+    background-color: var(--sport-primary-color);
+  }
+  
+  .side-menu.sport .user-avatar {
+    background-color: var(--sport-avatar-bg);
+  }
+  
+  .side-menu.sport .user-avatar i {
+    color: var(--sport-primary-color);
+  }
+  
+  .side-menu.sport .user-details p {
+    color: var(--sport-text-secondary);
+  }
+  
+  .side-menu.sport .tab-btn {
+    color: var(--sport-text-secondary);
+  }
+  
+  .side-menu.sport .form-group input {
+    border: 1px solid var(--sport-input-border);
+    background-color: var(--sport-input-bg);
+    color: #fff;
+  }
+  
+  .side-menu.sport .form-group input:focus {
+    border-color: var(--sport-primary-color);
+  }
+  
+  .side-menu.sport .toggle-password {
+    color: var(--sport-text-secondary);
+  }
+  
+  .side-menu.sport .auth-divider span {
+    background-color: #0f172a;
+    color: var(--sport-text-secondary);
+  }
+  
+  .side-menu.sport .auth-divider:before {
+    background-color: var(--sport-divider-bg);
+  }
+  
+  .side-menu.sport .settings-section h4 {
+    color: var(--sport-settings-h4);
+  }
+  
+  .side-menu.sport .settings-list button {
+    color: var(--sport-settings-text);
+  }
+  
+  .side-menu.sport .settings-list button:hover {
+    background-color: var(--sport-settings-hover);
+  }
+  
+  .side-menu.sport .settings-list button i:last-child {
+    color: var(--sport-text-secondary);
+  }
+  
+  .side-menu.sport .menu-footer {
+    border-top: 1px solid var(--sport-border-color);
+  }
+  
+  .side-menu.sport .logout-btn {
+    background-color: var(--sport-logout-btn-bg);
+    color: var(--sport-logout-btn-text);
+  }
+  
+  .side-menu.sport .logout-btn:hover {
+    background-color: var(--sport-logout-btn-hover);
+  }
+  
+  .side-menu.sport .close-menu-btn {
+    background-color: var(--sport-close-btn-bg);
+    color: var(--sport-close-btn-text);
+  }
+  
+  .side-menu.sport .close-menu-btn:hover {
+    background-color: var(--sport-close-btn-hover);
+  }
+  
+  /* 音乐主题样式 */
+  .side-menu.music {
+    background: var(--music-menu-bg);
+  }
+  
+  .side-menu.music .user-info-section {
+    background-color: var(--music-user-section-bg);
+    border-bottom: 1px solid var(--music-border-color);
+  }
+  
+  .side-menu.music .auth-section,
+  .side-menu.music .settings-section {
+    border-bottom: 1px solid var(--music-border-color);
+  }
+  
+  .side-menu.music .auth-tabs {
+    border-bottom: 1px solid var(--music-border-color);
+  }
+  
+  .side-menu.music .tab-btn.active {
+    color: var(--music-primary-color);
+    border-bottom: 2px solid var(--music-primary-color);
+  }
+  
+  .side-menu.music .auth-submit-btn {
+    background: var(--music-button-gradient);
+  }
+  
+  .side-menu.music .settings-list button i:first-child {
+    color: var(--music-primary-color);
+  }
+  
+  .side-menu.music .toggle-switch input:checked + .slider {
+    background-color: var(--music-primary-color);
+  }
+  
+  .side-menu.music .user-avatar {
+    background-color: var(--music-avatar-bg);
+  }
+  
+  .side-menu.music .user-avatar i {
+    color: var(--music-primary-color);
+  }
+  
+  .side-menu.music .user-details p {
+    color: var(--music-text-secondary);
+  }
+  
+  .side-menu.music .tab-btn {
+    color: var(--music-text-secondary);
+  }
+  
+  .side-menu.music .form-group input {
+    border: 1px solid var(--music-input-border);
+    background-color: var(--music-input-bg);
+    color: #fff;
+  }
+  
+  .side-menu.music .form-group input:focus {
+    border-color: var(--music-primary-color);
+  }
+  
+  .side-menu.music .toggle-password {
+    color: var(--music-text-secondary);
+  }
+  
+  .side-menu.music .auth-divider span {
+    background-color: #1a0520;
+    color: var(--music-text-secondary);
+  }
+  
+  .side-menu.music .auth-divider:before {
+    background-color: var(--music-divider-bg);
+  }
+  
+  .side-menu.music .settings-section h4 {
+    color: var(--music-settings-h4);
+  }
+  
+  .side-menu.music .settings-list button {
+    color: var(--music-settings-text);
+  }
+  
+  .side-menu.music .settings-list button:hover {
+    background-color: var(--music-settings-hover);
+  }
+  
+  .side-menu.music .settings-list button i:last-child {
+    color: var(--music-text-secondary);
+  }
+  
+  .side-menu.music .menu-footer {
+    border-top: 1px solid var(--music-border-color);
+  }
+  
+  .side-menu.music .logout-btn {
+    background-color: var(--music-logout-btn-bg);
+    color: var(--music-logout-btn-text);
+  }
+  
+  .side-menu.music .logout-btn:hover {
+    background-color: var(--music-logout-btn-hover);
+  }
+  
+  .side-menu.music .close-menu-btn {
+    background-color: var(--music-close-btn-bg);
+    color: var(--music-close-btn-text);
+  }
+  
+  .side-menu.music .close-menu-btn:hover {
+    background-color: var(--music-close-btn-hover);
+  }
