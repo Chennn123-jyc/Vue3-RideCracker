@@ -1,13 +1,39 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+// 媒体类型接口
+export interface Image {
+  url: string;
+  caption?: string;
+}
+
+export interface Music {
+  url: string;
+  type: string;
+  title?: string;
+  artist?: string;
+  duration?: number;
+}
+
+export interface Video {
+  url: string;
+  type: string;
+  thumbnail?: string;
+  title?: string;
+  duration?: number;
+}
+
+// 合并后的 Note 接口（包含所有属性）
 export interface Note {
   id: number;
   title: string;
   content: string;
+  tags?: string[]; // 保持“可选”，或根据需求改为必选（去掉 ?）
+  images?: Image[];
+  music?: Music | null;
+  video?: Video | null;
   createdAt: string;
   updatedAt: string;
-  tags?: string[];
 }
 
 export const useNoteStore = defineStore('notes', () => {

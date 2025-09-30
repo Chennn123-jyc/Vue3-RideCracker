@@ -16,7 +16,7 @@
       <div class="user-avatar" @click="triggerAvatarClick">
         <img 
           v-if="userStore.currentUser?.avatar" 
-          :src="userStore.currentUser?.avatar" 
+          :src="getAvatarUrl(userStore.currentUser?.avatar)" 
           alt="用户头像"
         >
         <i v-else class="fa fa-user-circle"></i>

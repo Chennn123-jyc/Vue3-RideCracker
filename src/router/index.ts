@@ -131,28 +131,28 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/share',
     name: 'share',
-    component: () => import('@/views/ShareView.vue'),
+    component: () => import('@/views/ShareView.vue'), // 懒加载ShareView
     meta: { 
       showBottomNav: true,
       title: '分享',
-      theme: 'share', // 添加主题
+      theme: 'share',
       statusBarTheme: {
         bgColor: 'transparent',
         textColor: '#ffffff',
-        menuIconColor: '#8A2BE2', // 使用新的分享主题色
+        menuIconColor: '#8A2BE2',
         userIconColor: '#8A2BE2',
       }
     },
     children: [
       {
-        path: 'public',
+        path: 'public/:category?',
         name: 'share-public',
-        component: () => import('@/components/share/PublicShare.vue')
+        component: () => import('@/components/share/PublicShare.vue') // 懒加载
       },
       {
         path: 'personal',
         name: 'share-personal', 
-        component: () => import('@/components/share/PersonalNotes.vue')
+        component: () => import('@/components/share/PersonalNotes.vue') // 懒加载
       }
     ]
   },
