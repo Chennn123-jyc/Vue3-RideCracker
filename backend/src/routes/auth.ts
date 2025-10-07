@@ -1,10 +1,11 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { dbPool } from '../config/database.js';
-import { authenticateToken } from '../middleware/auth.js';
-import { ApiResponse, RegisterRequest, LoginRequest, User } from '../types/index.js';
+import { dbPool } from '../config/database';
+import { authenticateToken } from '../middleware/auth';
+import { ApiResponse, RegisterRequest, LoginRequest, User } from '../types/index';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { uploadImage } from '../middleware/upload';
 
 // 扩展 User 类型以包含 password
 interface UserWithPassword extends User {
@@ -177,6 +178,81 @@ router.get('/me', authenticateToken, async (req: express.Request, res: express.R
     const response: ApiResponse = {
       code: 500,
       message: error instanceof Error ? error.message : '服务器错误',
+      data: null,
+      timestamp: Date.now()
+    };
+    res.status(500).json(response);
+  }
+});
+
+
+
+// 更新用户信息
+router.put('/profile', authenticateToken, async (req: express.Request, res: express.Response): Promise<void> => {
+  try {
+    const { username, avatar } = req.body;
+    const userId = req.user!.id;
+
+    await dbPool.execute(
+      'UPDATE users SET username = ?, avatar = ? WHERE id = ?',
+      [username, avatar, userId]
+    );
+
+    const response: ApiResponse = {
+      code: 200,
+      message: '更新成功',
+      data: null,
+      timestamp: Date.now()
+    };
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse = {
+      code: 500,
+      message: error instanceof Error ? error.message : '服务器错误',
+      data: null,
+      timestamp: Date.now()
+    };
+    res.status(500).json(response);
+  }
+});
+
+
+// 上传头像
+router.post('/avatar', authenticateToken, uploadImage.single('avatar'), async (req: express.Request, res: express.Response): Promise<void> => {
+  try {
+    if (!req.file) {
+      const response: ApiResponse = {
+        code: 400,
+        message: '请选择头像文件',
+        data: null,
+        timestamp: Date.now()
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    const avatarUrl = `/uploads/images/${req.file.filename}`;
+    const userId = req.user!.id;
+
+    // 更新用户头像
+    await dbPool.execute(
+      'UPDATE users SET avatar = ? WHERE id = ?',
+      [avatarUrl, userId]
+    );
+
+    const response: ApiResponse = {
+      code: 200,
+      message: '头像上传成功',
+      data: {
+        avatar: avatarUrl
+      },
+      timestamp: Date.now()
+    };
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse = {
+      code: 500,
+      message: error instanceof Error ? error.message : '头像上传失败',
       data: null,
       timestamp: Date.now()
     };

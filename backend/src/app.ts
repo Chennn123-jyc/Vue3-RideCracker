@@ -4,6 +4,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 import { connectRedis } from './config/database';
+import { initDatabase } from './config/initDatabase';
 import authRoutes from './routes/auth';
 import musicRoutes from './routes/music';
 import sportRoutes from './routes/sport';
@@ -63,6 +64,11 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // 启动服务
 const startServer = async (): Promise<void> => {
   try {
+    // 初始化数据库
+    if (process.env.AUTO_INIT_DB === 'true') {
+      await initDatabase();
+    }
+    
     await connectRedis();
     console.log('Redis连接成功');
     

@@ -105,11 +105,13 @@ export interface ApiResponse<T = any> {
     category: string;
     is_public: boolean;
     like_count: number;
+    comment_count: number;
     view_count: number;
     created_at: Date;
     updated_at: Date;
     username?: string;
     avatar?: string;
+    is_liked?: boolean;
   }
   
   export interface CreateShareRequest {
@@ -135,4 +137,17 @@ export interface ApiResponse<T = any> {
     id: number;
     email: string;
     username: string;
+  }
+
+  export interface PlaylistWithMusic extends Playlist {
+    music?: Music[];
+  }
+  
+  export interface ShareWithDetail extends Share {
+    comments?: Comment[];
+    is_liked?: boolean;
+  }
+  
+  export interface SportSessionWithTracks extends SportSession {
+    tracks?: GPSPoint[];
   }

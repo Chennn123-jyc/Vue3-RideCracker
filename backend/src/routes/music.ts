@@ -1,7 +1,7 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
-import { uploadMusicMiddleware } from '../middleware/upload.js';
-import { getMusicList, uploadMusicHandler } from '../controllers/musicController.js';
+import { authenticateToken } from '../middleware/auth';
+import { uploadMusicMiddleware } from '../middleware/upload';
+import { getMusicList, uploadMusicHandler } from '../controllers/musicController';
 
 const router = express.Router();
 

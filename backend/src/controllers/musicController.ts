@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { musicService } from '../services/musicService.js';
-import { ApiResponse } from '../types/index.js';
+import { musicService } from '../services/musicService';
+import { ApiResponse } from '../types/index';
 
 export const getMusicList = async (req: Request, res: Response): Promise<void> => {
   try {

@@ -18,9 +18,9 @@
 
 <script setup lang="ts">
 import { onMounted,ref } from 'vue';
+import MusicHeader from '@/components/music/MusicHeader.vue';
 import { storeToRefs } from 'pinia';
 import { useMusicStore } from '@/stores/musicStore';
-import MusicHeader from '@/components/music/a.vue';
 import useAudioPlayer from '@/composables/useAudioPlayer';
 import type { Song } from '@/types/music';  
 import { useMenuStore } from '@/stores/menuStore'; 

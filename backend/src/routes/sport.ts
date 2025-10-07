@@ -1,15 +1,24 @@
 import express from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { 
+  startSportSession, 
+  endSportSession, 
+  getSportHistory, 
+  recordGPSTrack 
+} from '../controllers/sportController';
 
 const router = express.Router();
 
-// 临时路由，后续实现具体功能
-router.get('/', (req: express.Request, res: express.Response) => {
-  res.json({
-    code: 200,
-    message: '运动模块',
-    data: null,
-    timestamp: Date.now()
-  });
-});
+// 开始运动
+router.post('/sessions/start', authenticateToken, startSportSession);
+
+// 结束运动
+router.post('/sessions/:sessionId/end', authenticateToken, endSportSession);
+
+// 获取运动历史
+router.get('/sessions', authenticateToken, getSportHistory);
+
+// 记录GPS轨迹
+router.post('/sessions/:sessionId/tracks', authenticateToken, recordGPSTrack);
 
 export default router;

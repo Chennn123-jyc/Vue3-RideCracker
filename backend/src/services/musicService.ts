@@ -1,5 +1,5 @@
-import { dbPool } from '../config/database.js';
-import { Music, PaginatedResponse, UploadMusicRequest } from '../types/index.js';
+import { dbPool } from '../config/database';
+import { Music, PaginatedResponse, UploadMusicRequest, Playlist } from '../types/index';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 // 定义 Multer 文件类型
@@ -83,6 +83,57 @@ export class MusicService {
     const filePath = rows[0].file_path;
     return { filePath };
   }
+
+
+  // 播放列表相关方法
+async createPlaylist(name: string, userId: number, isPublic: boolean = false): Promise<{ id: number }> {
+  const [result] = await dbPool.execute<ResultSetHeader>(
+    `INSERT INTO playlists (name, user_id, is_public) VALUES (?, ?, ?)`,
+    [name, userId, isPublic]
+  );
+  
+  return { id: result.insertId };
+}
+
+async addToPlaylist(playlistId: number, musicId: number): Promise<void> {
+  const [result] = await dbPool.execute<ResultSetHeader>(
+    `INSERT INTO playlist_music (playlist_id, music_id) VALUES (?, ?)`,
+    [playlistId, musicId]
+  );
+}
+
+async getUserPlaylists(userId: number): Promise<Playlist[]> {
+  const [rows] = await dbPool.execute<RowDataPacket[]>(
+    `SELECT * FROM playlists WHERE user_id = ? ORDER BY created_at DESC`,
+    [userId]
+  );
+  
+  return rows as Playlist[];
+}
+
+async getPlaylistWithMusic(playlistId: number, userId: number): Promise<{playlist: Playlist; music: Music[]}> {
+  const [playlistRows] = await dbPool.execute<RowDataPacket[]>(
+    `SELECT * FROM playlists WHERE id = ? AND (user_id = ? OR is_public = true)`,
+    [playlistId, userId]
+  );
+  
+  if (playlistRows.length === 0) {
+    throw new Error('播放列表不存在或无权访问');
+  }
+  
+  const [musicRows] = await dbPool.execute<RowDataPacket[]>(
+    `SELECT m.* FROM music m
+     JOIN playlist_music pm ON m.id = pm.music_id
+     WHERE pm.playlist_id = ?
+     ORDER BY pm.sort_order, pm.added_at`,
+    [playlistId]
+  );
+  
+  return {
+    playlist: playlistRows[0] as Playlist,
+    music: musicRows as Music[]
+  };
+}
 
   private async extractAudioDuration(filePath: string): Promise<number> {
     // 实现音频时长提取逻辑

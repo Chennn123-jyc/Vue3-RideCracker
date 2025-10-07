@@ -91,9 +91,18 @@
           </button>
         </div>
         
-        <button type="submit" class="auth-submit-btn">
-          {{ authTab === 'login' ? '登录' : '注册' }}
+        <button 
+        type="submit" 
+        class="auth-submit-btn"
+        :disabled="authLoading"
+        >
+        {{ authLoading ? '处理中...' : (authTab === 'login' ? '登录' : '注册') }}
         </button>
+
+        <!-- 错误提示 -->
+        <div v-if="authError" class="auth-error">
+          {{ authError }}
+        </div>
       </form>
       
       <div class="auth-divider">
@@ -188,11 +197,25 @@ const theme = computed(() => menuStore.theme);
 const router = useRouter()
 const userStore = useUserStore()
 
+const authLoading = ref(false)
+const authError = ref('')
+
 const props = defineProps<{
   isOpen: boolean,
   onCloseMenu: Function,
   theme: String
 }>()
+
+// 添加 getAvatarUrl 方法
+const getAvatarUrl = (avatar: string | undefined): string => {
+  if (!avatar) return '';
+  // 如果是完整的 URL 或 base64 数据，直接返回
+  if (avatar.startsWith('http') || avatar.startsWith('data:')) {
+    return avatar;
+  }
+  // 如果是相对路径，添加基础路径
+  return `${import.meta.env.VITE_API_BASE_URL || ''}${avatar}`;
+};
 
 const currentThemeVars = computed(() => {
   const themeKey: ThemeType = 
@@ -227,31 +250,63 @@ const triggerAvatarClick = () => {
   }
 }
 
-const handleAvatarUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
+// 修改后的头像上传方法
+const handleAvatarUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    const file = target.files[0]
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      userStore.updateAvatar(e.target?.result as string)
+    const file = target.files[0];
+    
+    try {
+      // 创建 FormData 对象
+      const formData = new FormData();
+      formData.append('avatar', file);
+      
+      // 调用 userStore 的更新头像方法
+      await userStore.updateAvatar(formData);
+      
+      console.log('头像更新成功');
+      
+      // 重新获取用户信息以确保数据同步
+      await userStore.getCurrentUser();
+      
+    } catch (error: any) {
+      console.error('头像上传失败:', error);
+      alert('头像上传失败: ' + (error.message || '请重试'));
     }
-    reader.readAsDataURL(file)
   }
-}
+};
 
 const handleAuth = async () => {
-  let success = false
-  if (authTab.value === 'login') {
-    success = userStore.login(authData.email, authData.password)
-  } else {
-    success = userStore.register(authData.username, authData.email, authData.password)
-  }
-  if (success) {
-    authData.username = ''
-    authData.email = ''
-    authData.password = ''
-  } else {
-    alert(authTab.value === 'login' ? '登录失败，请检查邮箱和密码' : '注册失败，邮箱可能已被使用')
+  authLoading.value = true
+  authError.value = ''
+  
+  try {
+    let success = false
+    
+    if (authTab.value === 'login') {
+      success = await userStore.login(authData.email, authData.password)
+    } else {
+      success = await userStore.register(authData.username, authData.email, authData.password)
+    }
+    
+    if (success) {
+      authData.username = ''
+      authData.email = ''
+      authData.password = ''
+      showPassword.value = false
+      
+      // 可以添加成功提示
+      console.log(authTab.value === 'login' ? '登录成功' : '注册成功')
+      
+      if (authTab.value === 'register') {
+        authTab.value = 'login'
+      }
+    }
+  } catch (error: any) {
+    authError.value = error.message || (authTab.value === 'login' ? '登录失败' : '注册失败')
+    console.error('认证失败:', error)
+  } finally {
+    authLoading.value = false
   }
 }
 
@@ -292,6 +347,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
+/* 在样式部分添加错误提示样式 */
+.auth-error {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.side-menu.sport .auth-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.side-menu.music .auth-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.side-menu.share .auth-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
 /* 遮罩层 */
 .side-menu-mask {
   position: fixed;
