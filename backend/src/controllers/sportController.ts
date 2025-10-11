@@ -67,13 +67,19 @@ export const endSportSession = async (req: Request, res: Response): Promise<void
 
 export const getSportHistory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    let { page = 1, limit = 10 } = req.query;
     const userId = req.user!.id;
 
+    // 参数验证和转换
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(Math.max(1, parseInt(limit as string) || 10), 100); // 限制最大100条
+    
+    console.log(`🔍 获取运动历史 - 用户ID: ${userId}, 页码: ${pageNum}, 每页: ${limitNum}`);
+
     const history = await sportService.getSportHistory(
-      userId, 
-      parseInt(page as string), 
-      parseInt(limit as string)
+      userId,
+      pageNum, 
+      limitNum
     );
 
     const response: ApiResponse = {
@@ -84,6 +90,7 @@ export const getSportHistory = async (req: Request, res: Response): Promise<void
     };
     res.json(response);
   } catch (error) {
+    console.error('❌ 获取运动历史失败:', error);
     const response: ApiResponse = {
       code: 500,
       message: error instanceof Error ? error.message : '服务器错误',

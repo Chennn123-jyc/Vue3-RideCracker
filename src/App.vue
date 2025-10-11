@@ -13,7 +13,7 @@ import { useUserStore } from './stores/userStore';
 
 // 初始化用户状态
 const userStore = useUserStore();
-userStore.init();
+userStore.initialize();
 </script>
 
 <style scoped>

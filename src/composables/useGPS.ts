@@ -18,6 +18,7 @@ export interface GPSData {
   distance: Ref<number>;
   startTracking: () => void;
   stopTracking: () => void;
+  getCurrentPosition: () => { lat: number; lng: number; timestamp: string } | null; // 添加这个方法
 }
 
 export default function useGPS(): GPSData {
@@ -114,6 +115,18 @@ export default function useGPS(): GPSData {
     isTracking.value = false;
   };
 
+  // 添加获取轨迹点的方法
+  const getCurrentPosition = () => {
+    if (position.value) {
+      return {
+        lat: position.value.latitude,  
+        lng: position.value.longitude, 
+        timestamp: new Date().toISOString()
+      };
+    }
+    return null;
+  };
+
   onUnmounted(() => {
     stopTracking();
   });
@@ -125,5 +138,6 @@ export default function useGPS(): GPSData {
     distance,
     startTracking,
     stopTracking,
+    getCurrentPosition // 添加到返回对象中
   };
 }

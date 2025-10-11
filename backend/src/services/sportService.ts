@@ -1,5 +1,5 @@
 import { dbPool } from '../config/database';
-import { SportSession, GPSPoint, StartSessionRequest, EndSessionRequest } from '../types/index';
+import { SportSession, GPSPoint, StartSessionRequest, EndSessionRequest,PaginatedResponse } from '../types/index';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class SportService {
@@ -65,29 +65,55 @@ export class SportService {
   }
 
   // 获取运动历史
-  async getSportHistory(userId: number, page: number = 1, limit: number = 10): Promise<SportSession[]> {
-    const offset = (page - 1) * limit;
-    
+async getSportHistory(userId: number, page: number = 1, limit: number = 10): Promise<PaginatedResponse<SportSession>> {
+  const offset = (page - 1) * limit;
+  
+  console.log(`🔍 SQL参数 - userId: ${userId}, limit: ${limit}, offset: ${offset}`);
+  
+  try {
+    // 查询数据 - 确保参数类型正确
     const [rows] = await dbPool.execute<RowDataPacket[]>(
       `SELECT * FROM sport_sessions 
        WHERE user_id = ? 
        ORDER BY start_time DESC 
        LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
+      [userId, Number(limit), Number(offset)]  // 关键修复：确保转换为数字
+    );
+
+    // 查询总数
+    const [countRows] = await dbPool.execute<RowDataPacket[]>(
+      `SELECT COUNT(*) as total FROM sport_sessions WHERE user_id = ?`,
+      [userId]
     );
     
-    return rows as SportSession[];
+    const total = countRows[0].total;
+    const totalPages = Math.ceil(total / limit);
+    
+    console.log(`✅ 查询成功，找到 ${rows.length} 条记录，总共 ${total} 条`);
+    
+    return {
+      items: rows as SportSession[],
+      total,
+      page: parseInt(page.toString()),
+      limit: parseInt(limit.toString()),
+      totalPages
+    };
+  } catch (error) {
+    console.error('❌ SQL执行失败:', error);
+    throw error;
   }
+}
+  
 
   // 获取运动详情（包含轨迹）
   async getSessionDetail(sessionId: number, userId: number): Promise<{session: SportSession; tracks: GPSPoint[]}> {
     const [sessionRows] = await dbPool.execute<RowDataPacket[]>(
-      `SELECT * FROM sport_sessions WHERE id = ? AND user_id = ?`,
+      `SELECT * FROM sport_sessions WHERE id = ? AND user_id = ?`,  // 添加 user_id 条件
       [sessionId, userId]
     );
     
     if (sessionRows.length === 0) {
-      throw new Error('运动记录不存在');
+      throw new Error('运动记录不存在或无权访问');
     }
     
     const [trackRows] = await dbPool.execute<RowDataPacket[]>(

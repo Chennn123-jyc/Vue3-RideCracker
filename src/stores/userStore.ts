@@ -105,12 +105,15 @@ export const useUserStore = defineStore('user', () => {
 
   // 退出登录
   const logout = () => {
-    currentUser.value = null
-    isLoggedIn.value = false
-    token.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-  }
+    console.log('👋 用户退出登录，清理运动数据');
+    currentUser.value = null;
+    isLoggedIn.value = false;
+    token.value = null;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // 不清理运动记录，因为按用户ID隔离存储
+  };
 
   // 获取当前用户信息
   const getCurrentUser = async (): Promise<boolean> => {
@@ -153,19 +156,15 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 初始化 - 恢复登录状态
-  const init = async () => {
+  // 初始化时从localStorage恢复用户数据
+  const initialize = () => {
     const savedToken = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user')
     
     if (savedToken && savedUser) {
-      try {
-        // 验证 token 是否仍然有效
-        await getCurrentUser()
-      } catch (error) {
-        console.error('初始化登录状态失败:', error)
-        logout()
-      }
+      token.value = savedToken
+      currentUser.value = JSON.parse(savedUser)
+      isLoggedIn.value = true
     }
   }
 
@@ -224,7 +223,7 @@ const updateAvatar = async (avatarData: FormData | string): Promise<void> => {
     currentUser,
     isLoggedIn,
     token,
-    init,
+    initialize,
     login,
     register,
     logout,

@@ -62,6 +62,12 @@ import useGPS from '@/composables/useGPS';
 import HistoryCards from '@/components/sports/HistoryCards.vue';
 import { SPORT_MODES, SPORT_DEFAULTS } from '@/constants/sports';
 import { useMenuStore } from '@/stores/menuStore';
+import { sportService, type GPSPoint } from '@/services/sportService';
+import { useUserStore } from '@/stores/userStore';
+
+const userStore = useUserStore();
+const currentSessionId = ref<number | null>(null);
+const gpsTracks = ref<GPSPoint[]>([]);
 
 const menuStore = useMenuStore();
 
@@ -72,7 +78,8 @@ const {
   startTracking, 
   stopTracking, 
   formattedSpeed, 
-  distance 
+  distance,
+  getCurrentPosition  // 使用修复后的方法
 } = useGPS();
 
 // 运动状态管理
@@ -110,33 +117,81 @@ const formattedTime = computed(() => {
 });
 
 // 开始运动
-const startWorkout = () => {
+const startWorkout = async () => {
+  if (!userStore.isLoggedIn) {
+    alert('请先登录以保存运动数据');
+    return;
+  }
+
   isActive.value = true;
   isPaused.value = false;
-  startTracking();
-
-  if (startTime.value === null) {
-    startTime.value = Date.now();
-    elapsedTime.value = 0;
-  } else if (isPaused.value) {
-    const currentTime = Date.now();
-    const pauseDuration = currentTime - pausedTime.value;
-    startTime.value += pauseDuration;
-  }
   
-  timer.value = window.setInterval(() => {
-    if (startTime.value !== null) {
-      elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
-      
-      if (elapsedTime.value > 0) {
-        avgSpeed.value = (distance.value / 1000) / (elapsedTime.value / 3600);
-      }
-      
-      if (elapsedTime.value % 5 === 0) {
-        updateWorkoutData();
-      }
+  try {
+    // 开始GPS追踪
+    startTracking();
+    
+    // 创建运动会话
+    const sessionData = {
+      sport_type: activeMode.value,
+      start_time: new Date().toISOString()
+    };
+    
+    const result = await sportService.startSession(sessionData, userStore.token!);
+    currentSessionId.value = result.sessionId;
+    
+    // 开始计时器
+    if (startTime.value === null) {
+      startTime.value = Date.now();
+      elapsedTime.value = 0;
+    } else if (isPaused.value) {
+      const currentTime = Date.now();
+      const pauseDuration = currentTime - pausedTime.value;
+      startTime.value += pauseDuration;
     }
-  }, 1000);
+    
+    timer.value = window.setInterval(async () => {  // 添加 async
+      if (startTime.value !== null) {
+        elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+        
+        if (elapsedTime.value > 0) {
+          avgSpeed.value = (distance.value / 1000) / (elapsedTime.value / 3600);
+        }
+        
+        // 每5秒更新一次运动数据
+        if (elapsedTime.value % 5 === 0) {
+          updateWorkoutData();
+        }
+        
+        // 记录GPS轨迹点（每分钟记录一次）
+        if (elapsedTime.value % 60 === 0) {
+          const trackPoint = getCurrentPosition();
+          if (trackPoint) {
+            gpsTracks.value.push(trackPoint);
+            
+            // 实时上传轨迹点（可选）
+            if (currentSessionId.value) {
+              try {
+                await sportService.recordGPSTracks(
+                  currentSessionId.value, 
+                  [trackPoint], 
+                  userStore.token!
+                );
+              } catch (error) {
+                console.error('上传轨迹点失败:', error);
+                // 不阻止主流程，只记录错误
+              }
+            }
+          }
+        }
+      }
+    }, 1000);
+    
+  } catch (error) {
+    console.error('开始运动失败:', error);
+    alert('开始运动失败，请重试');
+    isActive.value = false;
+    stopTracking();
+  }
 };
 
 // 暂停/继续运动
@@ -157,14 +212,49 @@ const togglePause = () => {
 };
 
 // 结束运动
-const endWorkout = () => {
+// 结束运动
+const endWorkout = async () => {
   isActive.value = false;
   isPaused.value = false;
   
   if (timer.value) clearInterval(timer.value);
   timer.value = null;
   
-  if (elapsedTime.value > 0) {
+  try {
+    if (currentSessionId.value && elapsedTime.value > 0) {
+      // 计算卡路里（简化计算）
+      const calories = calculateCalories(activeMode.value, elapsedTime.value, avgSpeed.value);
+      
+      console.log('👤 当前用户:', userStore.currentUser?.id, userStore.currentUser?.username);
+      console.log('📊 运动数据:', {
+        duration: elapsedTime.value,
+        distance: distance.value,
+        avgSpeed: avgSpeed.value,
+        calories: calories
+      });
+      
+      // 结束运动会话
+      await sportService.endSession(
+        currentSessionId.value,
+        {
+          end_time: new Date().toISOString(),
+          calories: calories,
+          distance: distance.value / 1000,
+          steps: calculateSteps(activeMode.value, distance.value)
+        },
+        gpsTracks.value,
+        userStore.token!
+      );
+      
+      console.log('✅ 运动数据已保存到数据库，关联用户:', userStore.currentUser?.id);
+      
+      // 重要：立即刷新历史记录，从后端加载最新数据
+      setTimeout(() => {
+        historyCardsRef.value?.refreshData();
+      }, 1000);
+    }
+    
+    // 同时保存到本地历史记录（按用户隔离）
     const modeLabel = modes.value.find(m => m.id === activeMode.value)?.label || '运动';
     const activity = {
       type: modeLabel,
@@ -172,18 +262,23 @@ const endWorkout = () => {
       distance: parseFloat((distance.value / 1000).toFixed(1)),
       duration: formattedTime.value,
       avgSpeed: parseFloat(avgSpeed.value.toFixed(1)),
-      color: 'primary'
+      color: 'primary',
+      calories: calculateCalories(activeMode.value, elapsedTime.value, avgSpeed.value)
     };
 
     historyCardsRef.value?.addActivity(activity);
     
-  // 保存到localStorage供分享使用
-  const activities = JSON.parse(localStorage.getItem('sportActivities') || '[]');
-    activities.unshift(activity);
-    localStorage.setItem('sportActivities', JSON.stringify(activities));
+    console.log('📝 运动记录已添加到本地历史');
+    
+  } catch (error) {
+    console.error('❌ 结束运动失败:', error);
+    alert('保存运动数据失败，但本地记录已保存');
+  } finally {
+    stopTracking();
+    resetWorkoutData();
+    currentSessionId.value = null;
+    gpsTracks.value = [];
   }
-  stopTracking();
-  resetWorkoutData();
 };
 
 // 更新运动数据
@@ -243,6 +338,30 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (timer.value) clearInterval(timer.value);
 });
+
+// 添加辅助计算方法
+const calculateCalories = (sportType: string, duration: number, speed: number): number => {
+  // 简化的卡路里计算，实际应用中应该更精确
+  const baseCalories = {
+    cycling: 0.05,
+    running: 0.08,
+    hiking: 0.06,
+    walking: 0.04,
+    swimming: 0.07,
+    basketball: 0.08
+  };
+  
+  const multiplier = baseCalories[sportType as keyof typeof baseCalories] || 0.05;
+  return Math.round(multiplier * duration * speed);
+};
+
+const calculateSteps = (sportType: string, distance: number): number => {
+  // 简化的步数计算
+  if (sportType === 'running' || sportType === 'walking') {
+    return Math.round(distance / 0.0007); // 假设平均步长0.7米
+  }
+  return 0;
+};
 </script>
 
 <style scoped>
