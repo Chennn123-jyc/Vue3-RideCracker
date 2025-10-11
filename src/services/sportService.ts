@@ -191,7 +191,32 @@ class SportService {
       
       throw error;
     }
+  };
+  // 在 SportService 类中添加删除方法
+async deleteSession(sessionId: number, token: string): Promise<void> {
+  if (!token) {
+    throw new Error('用户未登录，无法删除记录');
   }
+
+  console.log(`🗑️ 请求删除运动记录: ${sessionId}`);
+
+  const response = await fetch(`${this.API_BASE}/sport/sessions/${sessionId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  const result = await response.json();
+
+  if (result.code === 200) {
+    console.log('✅ 运动记录删除成功');
+    return;
+  } else {
+    console.error('❌ 删除运动记录失败:', result.message);
+    throw new Error(result.message);
+  }
+}
 }
 
 export const sportService = new SportService();

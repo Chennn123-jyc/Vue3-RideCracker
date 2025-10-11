@@ -257,14 +257,15 @@ const endWorkout = async () => {
     // 同时保存到本地历史记录（按用户隔离）
     const modeLabel = modes.value.find(m => m.id === activeMode.value)?.label || '运动';
     const activity = {
-      type: modeLabel,
-      date: '刚刚',
-      distance: parseFloat((distance.value / 1000).toFixed(1)),
-      duration: formattedTime.value,
-      avgSpeed: parseFloat(avgSpeed.value.toFixed(1)),
-      color: 'primary',
-      calories: calculateCalories(activeMode.value, elapsedTime.value, avgSpeed.value)
-    };
+  type: modeLabel,
+  date: '刚刚',
+  distance: parseFloat((distance.value / 1000).toFixed(1)),
+  duration: formattedTime.value,
+  avgSpeed: parseFloat(avgSpeed.value.toFixed(1)),
+  color: 'primary',
+  calories: calculateCalories(activeMode.value, elapsedTime.value, avgSpeed.value),
+  isLocal: true // 明确标记为本地记录
+};
 
     historyCardsRef.value?.addActivity(activity);
     

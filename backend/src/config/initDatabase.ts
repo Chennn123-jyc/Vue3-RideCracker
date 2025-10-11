@@ -37,22 +37,23 @@ export const initDatabase = async (): Promise<void> => {
     console.log('✓ 音乐表创建成功');
 
     // 运动会话表
-    await dbPool.execute(`
-      CREATE TABLE IF NOT EXISTS sport_sessions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        sport_type ENUM('running', 'cycling', 'walking', 'hiking', 'gym') NOT NULL,
-        start_time DATETIME NOT NULL,
-        end_time DATETIME,
-        duration INT DEFAULT 0,
-        calories DECIMAL(8,2) DEFAULT 0,
-        distance DECIMAL(8,2) DEFAULT 0,
-        steps INT DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `);
-    console.log('✓ 运动会话表创建成功');
+   await dbPool.execute(`
+  CREATE TABLE IF NOT EXISTS sport_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    sport_type ENUM('running', 'cycling', 'walking', 'hiking', 'gym', 'swimming') NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME,
+    duration INT DEFAULT 0,
+    calories DECIMAL(8,2) DEFAULT 0,
+    distance DECIMAL(8,2) DEFAULT 0,
+    steps INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_sport_sessions_user_start (user_id, start_time DESC)
+  )
+`);
+console.log('✓ 运动会话表创建成功');
 
     // 运动轨迹表
     await dbPool.execute(`
@@ -63,7 +64,8 @@ export const initDatabase = async (): Promise<void> => {
         longitude DECIMAL(11, 8) NOT NULL,
         timestamp DATETIME NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (session_id) REFERENCES sport_sessions(id) ON DELETE CASCADE
+        FOREIGN KEY (session_id) REFERENCES sport_sessions(id) ON DELETE CASCADE,
+        INDEX idx_sport_tracks_session_time (session_id, timestamp ASC)
       )
     `);
     console.log('✓ 运动轨迹表创建成功');

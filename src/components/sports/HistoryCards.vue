@@ -5,67 +5,76 @@
       运动记录
     </h2>
     
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-state">
-      <i class="fa fa-spinner fa-spin"></i>
-      <p>加载中...</p>
+    <!-- 未登录提示 -->
+    <div v-if="!userStore.isLoggedIn" class="empty-state">
+      <i class="fa fa-user"></i>
+      <p>请先登录查看运动记录</p>
+      <span>登录后可以保存和查看您的个人运动数据</span>
     </div>
     
-    <!-- 空状态提示 -->
-    <div v-else-if="activities.length === 0" class="empty-state">
-      <i class="fa fa-running"></i>
-      <p>暂时还没有运动记录哦</p>
-      <span>开始你的第一次运动吧！</span>
-    </div>
-    
-    <!-- 有记录时的显示 -->
-    <div v-else class="cards-container">
-      <div 
-        v-for="(activity, index) in activities" 
-        :key="activity.id || index"
-        class="activity-card"
-        :style="`
-          background-color: rgba(var(--${activity.color}-rgb), 0.1);
-          border-color: rgba(var(--${activity.color}-rgb), 0.2);
-          box-shadow: 0 4px 6px -1px rgba(var(--${activity.color}-rgb), 0.1);
-        `"
-      >
-        <div class="card-header">
-          <div 
-            class="activity-icon"
-            :style="`background-color: rgba(var(--${activity.color}-rgb), 0.2);`"
-          >
-            <i 
-              class="fa"
-              :class="getSportIcon(activity.type)"
-              :style="`color: rgb(var(--${activity.color}-rgb));`"
-            ></i>
-          </div>
-          <div class="header-actions">
-            <span class="activity-date">{{ activity.date }}</span>
-            <button 
-              class="delete-btn" 
-              @click="showDeleteConfirm(activity.id || index)"
-              aria-label="删除记录"
-              v-if="userStore.isLoggedIn"
+    <!-- 登录后的内容 -->
+    <div v-else>
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-state">
+        <i class="fa fa-spinner fa-spin"></i>
+        <p>加载中...</p>
+      </div>
+      
+      <!-- 空状态提示 -->
+      <div v-else-if="activities.length === 0" class="empty-state">
+        <i class="fa fa-running"></i>
+        <p>暂时还没有运动记录哦</p>
+        <span>开始你的第一次运动吧！</span>
+      </div>
+      
+      <!-- 有记录时的显示 -->
+      <div v-else class="cards-container">
+        <div 
+          v-for="(activity, index) in activities" 
+          :key="activity.id || index"
+          class="activity-card"
+          :style="`
+            background-color: rgba(var(--${activity.color}-rgb), 0.1);
+            border-color: rgba(var(--${activity.color}-rgb), 0.2);
+            box-shadow: 0 4px 6px -1px rgba(var(--${activity.color}-rgb), 0.1);
+          `"
+        >
+          <div class="card-header">
+            <div 
+              class="activity-icon"
+              :style="`background-color: rgba(var(--${activity.color}-rgb), 0.2);`"
             >
-              <i class="fa fa-trash-o"></i>
-            </button>
+              <i 
+                class="fa"
+                :class="getSportIcon(activity.type)"
+                :style="`color: rgb(var(--${activity.color}-rgb));`"
+              ></i>
+            </div>
+            <div class="header-actions">
+              <span class="activity-date">{{ activity.date }}</span>
+              <button 
+                class="delete-btn" 
+                @click="showDeleteConfirm(activity.id || index)"
+                aria-label="删除记录"
+              >
+                <i class="fa fa-trash-o"></i>
+              </button>
+            </div>
           </div>
-        </div>
-        
-        <div class="card-content">
-          <h3 class="activity-title">
-            {{ activity.distance }}km {{ activity.type }}
-          </h3>
-          <div class="activity-details">
-            <span>{{ activity.duration }}</span>
-            <span>平均速度 {{ activity.avgSpeed }} km/h</span>
-          </div>
-          <!-- 显示卡路里消耗 -->
-          <div class="activity-calories" v-if="activity.calories">
-            <i class="fa fa-fire"></i>
-            <span>消耗 {{ activity.calories }} 卡路里</span>
+          
+          <div class="card-content">
+            <h3 class="activity-title">
+              {{ activity.distance }}km {{ activity.type }}
+            </h3>
+            <div class="activity-details">
+              <span>{{ activity.duration }}</span>
+              <span>平均速度 {{ activity.avgSpeed }} km/h</span>
+            </div>
+            <!-- 显示卡路里消耗 -->
+            <div class="activity-calories" v-if="activity.calories">
+              <i class="fa fa-fire"></i>
+              <span>消耗 {{ activity.calories }} 卡路里</span>
+            </div>
           </div>
         </div>
       </div>
@@ -102,7 +111,9 @@ interface ActivityRecord {
   avgSpeed: number;
   color: SportMode['color'];
   calories?: number;
+  isLocal?: boolean; // 添加标识，标记是否为本地记录
 }
+
 
 const activities = ref<ActivityRecord[]>([]);
 const loading = ref(false);
@@ -111,14 +122,17 @@ const currentDeleteId = ref<number | string | null>(null);
 
 // 监听登录状态变化，重新加载数据
 watch(() => userStore.isLoggedIn, (isLoggedIn) => {
+  console.log('👀 登录状态变化:', isLoggedIn);
   if (isLoggedIn) {
     loadActivitiesFromBackend();
   } else {
-    loadActivitiesFromLocalStorage();
+    // 未登录时清空数据
+    activities.value = [];
+    console.log('🚫 用户未登录，清空运动记录显示');
   }
 });
 
-// 从后端加载历史记录 - 修复版本
+// 从后端加载历史记录
 const loadActivitiesFromBackend = async () => {
   if (!userStore.isLoggedIn) {
     console.log('❌ 用户未登录，回退到本地存储');
@@ -137,14 +151,15 @@ const loadActivitiesFromBackend = async () => {
     if (history && Array.isArray(history.items)) {
       // 转换后端数据格式为前端格式
       const backendActivities: ActivityRecord[] = history.items.map((session: any) => ({
-        id: session.id,
+        id: session.id, // 使用数据库自增ID
         type: getSportLabel(session.sport_type),
         date: formatDate(session.start_time),
         distance: parseFloat(session.distance || 0),
         duration: formatDuration(session.duration || 0),
         avgSpeed: calculateAvgSpeed(session.distance, session.duration),
         color: getSportColor(session.sport_type),
-        calories: session.calories || 0
+        calories: session.calories || 0,
+        isLocal: false // 明确标记为非本地记录
       }));
       
       activities.value = backendActivities;
@@ -156,28 +171,20 @@ const loadActivitiesFromBackend = async () => {
     
   } catch (error: any) {
     console.error('❌ 加载个人运动历史失败:', error);
-    
-    // 修改错误处理逻辑
-    if (error.message.includes('使用本地存储模式') || 
-        error.message.includes('无法连接到后端服务') ||
-        error.message.includes('Failed to fetch')) {
-      console.warn('⚠️ 后端服务不可用，自动切换到本地存储模式');
-      loadActivitiesFromLocalStorage();
-    } else {
-      // 其他错误仍然显示错误信息
-      console.error('错误详情:', error.message);
-      // 提供用户友好的错误信息
-      loadActivitiesFromLocalStorage(); // 确保即使出错也回退到本地存储
-    }
+    loadActivitiesFromLocalStorage();
   } finally {
     loading.value = false;
-    console.log('🏁 加载完成，当前记录数:', activities.value.length);
   }
 };
 
 // 从本地存储加载活动
 const loadActivitiesFromLocalStorage = () => {
-  const userId = userStore.isLoggedIn ? userStore.currentUser?.id : 'anonymous';
+  if (!userStore.isLoggedIn) {
+    activities.value = [];
+    return;
+  }
+
+  const userId = userStore.currentUser?.id;
   const storageKey = `sportActivities_${userId}`;
   
   const savedActivities = localStorage.getItem(storageKey);
@@ -264,11 +271,22 @@ const showDeleteConfirm = (id: number | string) => {
 const confirmDelete = async () => {
   if (currentDeleteId.value !== null) {
     try {
-      // 如果是数字ID，说明是数据库记录，需要调用后端API删除
-      if (typeof currentDeleteId.value === 'number' && userStore.isLoggedIn) {
-        // 这里需要添加删除后端记录的API调用
-        // await sportService.deleteSession(currentDeleteId.value);
-        console.log('删除数据库记录:', currentDeleteId.value);
+      // 找到要删除的记录
+      const activityToDelete = activities.value.find(a => a.id === currentDeleteId.value);
+      
+      console.log('🔍 删除操作详情:', {
+        currentDeleteId: currentDeleteId.value,
+        userId: userStore.currentUser?.id,
+        activityToDelete: activityToDelete,
+        isLocalRecord: activityToDelete?.isLocal
+      });
+
+      // 如果是数据库记录（非本地记录）且用户已登录
+      if (activityToDelete && !activityToDelete.isLocal && userStore.isLoggedIn && userStore.token) {
+        console.log('🗑️ 删除数据库记录:', currentDeleteId.value);
+        await sportService.deleteSession(currentDeleteId.value as number, userStore.token);
+      } else {
+        console.log('🗑️ 删除本地记录:', currentDeleteId.value);
       }
       
       // 从前端列表中移除
@@ -279,8 +297,27 @@ const confirmDelete = async () => {
       // 更新本地存储
       saveActivitiesToLocalStorage();
       
+      console.log('✅ 记录删除成功');
+      
     } catch (error) {
-      console.error('删除记录失败:', error);
+      console.error('❌ 删除记录失败:', error);
+      
+      // 更详细的错误处理
+      if (error instanceof Error) {
+        if (error.message.includes('无权') || error.message.includes('不存在')) {
+          console.warn('⚠️ 记录权限问题，尝试仅删除本地记录');
+          // 仍然删除本地记录
+          activities.value = activities.value.filter(activity => 
+            activity.id !== currentDeleteId.value
+          );
+          saveActivitiesToLocalStorage();
+          alert('记录已从本地删除，但服务器记录可能不存在');
+        } else {
+          alert('删除失败，请重试: ' + error.message);
+        }
+      } else {
+        alert('删除失败，请重试: 未知错误');
+      }
     } finally {
       showModal.value = false;
       currentDeleteId.value = null;
@@ -299,7 +336,8 @@ const addActivity = (newActivity: ActivityRecord) => {
     // 添加到列表开头
     activities.value.unshift({
       ...newActivity,
-      id: Date.now() // 为本地记录添加临时ID
+      id: Date.now(), // 为本地记录添加临时ID
+      isLocal: true   // 标记为本地记录
     });
     saveActivitiesToLocalStorage();
     console.log('✅ 活动添加成功，当前记录数:', activities.value.length);
@@ -314,13 +352,15 @@ const refreshData = () => {
   if (userStore.isLoggedIn) {
     loadActivitiesFromBackend();
   } else {
-    loadActivitiesFromLocalStorage();
+    activities.value = [];
   }
 };
 
 // 保存活动到本地存储
 const saveActivitiesToLocalStorage = () => {
-  const userId = userStore.isLoggedIn ? userStore.currentUser?.id : 'anonymous';
+  if (!userStore.isLoggedIn) return;
+  
+  const userId = userStore.currentUser?.id;
   const storageKey = `sportActivities_${userId}`;
   localStorage.setItem(storageKey, JSON.stringify(activities.value));
   console.log('💾 保存用户运动记录到本地，数量:', activities.value.length);
@@ -329,10 +369,12 @@ const saveActivitiesToLocalStorage = () => {
 // 初始化时加载数据
 onMounted(() => {
   console.log('🏁 HistoryCards 组件初始化');
+  console.log('👤 当前登录状态:', userStore.isLoggedIn);
+  
   if (userStore.isLoggedIn) {
     loadActivitiesFromBackend();
   } else {
-    loadActivitiesFromLocalStorage();
+    activities.value = [];
   }
 });
 
