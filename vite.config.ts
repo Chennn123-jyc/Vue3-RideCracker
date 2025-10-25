@@ -5,9 +5,34 @@ import path from 'path'
 export default defineConfig({
   // 服务器配置
   server: {
-    host: '0.0.0.0', // 监听所有网络接口
-    port: 5173,      // 确保端口可用
-    strictPort: true // 严格使用指定端口
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    // 🔥 添加代理配置
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('代理错误:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('发送请求到后端:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('从后端接收响应:', proxyRes.statusCode, req.url);
+          });
+        }
+      },
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   // 插件配置
   plugins: [vue()],
@@ -17,7 +42,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     }
   },
-  define:{
-    'process.env':{}
+  define: {
+    'process.env': {}
   }
 })

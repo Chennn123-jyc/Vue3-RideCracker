@@ -306,12 +306,13 @@ onMounted(() => {
 
 .lyrics-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   position: relative;
-  padding: 15px 0 20px;
+  padding: 15px 20px 20px;
   border-bottom: 1px solid rgba(138, 43, 226, 0.3);
   margin-top: 10px;
+  z-index: 10; 
 }
 
 .song-info {
@@ -346,6 +347,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 100;
 }
 
 .close-btn:active {
